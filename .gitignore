@@ -1,0 +1,37 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Kubernetes
+*.tgz
+
+# Helm
+charts/*/charts/
+charts/*/tmp/
+
+# Docker
+docker-compose.override.yaml
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Test output
+test-results/
+
+# Certificates
+*.pem
+*.key
+*.crt

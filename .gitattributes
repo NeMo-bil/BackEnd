@@ -1,2 +1,13 @@
-# Auto detect text files and perform LF normalization
+# Keep scripts Linux-compatible across Windows/macOS/Linux
+
 * text=auto
+
+*.sh text eol=lf
+*.yaml text
+*.yml text
+*.json text
+*.md text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
