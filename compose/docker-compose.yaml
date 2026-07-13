@@ -40,6 +40,7 @@ services:
 
     volumes:
       - stellio-postgres-data:/var/lib/postgresql/data
+      - ../config/stellio/init:/docker-entrypoint-initdb.d
 
     healthcheck:
       test:
@@ -64,35 +65,31 @@ services:
       - --import-realm
 
     environment:
-
       KC_DB: postgres
-
-      KC_DB_URL:
-        jdbc:postgresql://keycloak-postgres:5432/keycloak
-
-      KC_DB_USERNAME:
-        ${KEYCLOAK_DB_USER}
-
-      KC_DB_PASSWORD:
-        ${KEYCLOAK_DB_PASSWORD}
-
-      KC_BOOTSTRAP_ADMIN_USERNAME:
-        ${KEYCLOAK_ADMIN}
-
-      KC_BOOTSTRAP_ADMIN_PASSWORD:
-        ${KEYCLOAK_ADMIN_PASSWORD}
-        
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
-
       KC_HEALTH_ENABLED: "true"
 
     volumes:
       - ../config/keycloak:/opt/keycloak/data/import
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q UP"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
 
     ports:
           - "8080:8080"
@@ -111,37 +108,33 @@ services:
 
     environment:
       KAFKA_NODE_ID: "1"
-
       KAFKA_PROCESS_ROLES: "broker,controller"
-
       KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
-
       KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
-
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
-
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
-
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
-
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
-
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
-
       CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
 
     volumes:
       - kafka-data:/var/lib/kafka/data
 
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
 volumes:
-
   keycloak-postgres-data:
-
   kafka-data:
-
   stellio-postgres-data:
   
   
