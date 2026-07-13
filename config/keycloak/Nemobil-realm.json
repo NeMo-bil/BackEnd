@@ -1,0 +1,152 @@
+{
+  "realm": "Nemobil",
+  "enabled": true,
+
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Standard application user"
+      },
+      {
+        "name": "stellio-admin",
+        "description": "Stellio administrator"
+      }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "nemobil-app",
+      "name": "NeMo-bil Mobile App",
+      "enabled": true,
+
+      "protocol": "openid-connect",
+
+      "publicClient": false,
+
+      "secret": "Nemobil_Client_Secret_2026!",
+
+      "directAccessGrantsEnabled": true,
+
+      "standardFlowEnabled": true,
+
+      "redirectUris": [
+        "*"
+      ],
+
+      "webOrigins": [
+        "*"
+      ]
+    }
+  ],
+
+  "users": [
+
+    {
+      "username": "stellio-admin@test.de",
+      "enabled": true,
+        
+      "firstName": "Stellio",
+      "lastName": "Administrator",
+        
+      "requiredActions": [],
+
+      "email": "stellio-admin@test.de",
+      "emailVerified": true,
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Nemobil_Stellio_Admin_2026!",
+          "temporary": false
+        }
+      ],
+
+      "realmRoles": [
+        "user",
+        "stellio-admin"
+      ]
+    },
+
+
+    {
+      "username": "stellio-serviceaccount@test.de",
+      "enabled": true,
+        
+      "firstName": "Stellio",
+      "lastName": "Service Account",
+
+      "requiredActions": [],
+
+      "email": "stellio-serviceaccount@test.de",
+      "emailVerified": true,
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Nemobil_Service_2026!",
+          "temporary": false
+        }
+      ],
+
+      "realmRoles": [
+        "user",
+        "stellio-admin"
+      ]
+    },
+
+
+    {
+      "username": "app-user-1@test.de",
+      "enabled": true,
+        
+      "firstName": "Application",
+      "lastName": "User One",
+
+      "requiredActions": [],
+
+      "email": "app-user-1@test.de",
+      "emailVerified": true,
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Nemobil_User1_2026!",
+          "temporary": false
+        }
+      ],
+
+      "realmRoles": [
+        "user"
+      ]
+    },
+
+
+    {
+      "username": "app-user-2@test.de",
+      "enabled": true,
+        
+      "firstName": "Application",
+      "lastName": "User Two",
+
+      "requiredActions": [],
+
+      "email": "app-user-2@test.de",
+      "emailVerified": true,
+
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Nemobil_User2_2026!",
+          "temporary": false
+        }
+      ],
+
+      "realmRoles": [
+        "user"
+      ]
+    }
+
+  ]
+}

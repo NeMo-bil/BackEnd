@@ -37,3 +37,13 @@ See:
 ## License
 
 Apache License 2.0
+
+
+## Known local development limitation
+
+The local Docker Compose deployment runs Keycloak over HTTP.
+
+The Keycloak Account Console may show a session iframe warning because
+secure cookies require HTTPS.
+
+OAuth2 authentication flows are fully functional and tested.

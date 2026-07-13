@@ -1,32 +1,11 @@
 services:
 
-  postgres:
-    image: postgres:16
-    container_name: nemobil-postgres
-    restart: unless-stopped
-
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER}"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-
   keycloak-postgres:
     image: postgres:16
     container_name: nemobil-keycloak-postgres
     restart: unless-stopped
+    networks:
+      - nemobil
 
     environment:
       POSTGRES_DB: keycloak
@@ -47,13 +26,42 @@ services:
       retries: 10
 
 
+  stellio-postgres:
+    image: postgres:16
+    container_name: nemobil-stellio-postgres
+    restart: unless-stopped
+    networks:
+      - nemobil
+
+    environment:
+      POSTGRES_DB: stellio
+      POSTGRES_USER: ${STELLIO_DB_USER}
+      POSTGRES_PASSWORD: ${STELLIO_DB_PASSWORD}
+
+    volumes:
+      - stellio-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${STELLIO_DB_USER}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
     container_name: nemobil-keycloak
     restart: unless-stopped
+    networks:
+      - nemobil
 
     command:
       - start-dev
+      - --import-realm
 
     environment:
 
@@ -73,11 +81,21 @@ services:
 
       KC_BOOTSTRAP_ADMIN_PASSWORD:
         ${KEYCLOAK_ADMIN_PASSWORD}
+        
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
 
       KC_HEALTH_ENABLED: "true"
 
+    volumes:
+      - ../config/keycloak:/opt/keycloak/data/import
+
     ports:
-      - "8080:8080"
+          - "8080:8080"
 
     depends_on:
       keycloak-postgres:
@@ -88,40 +106,31 @@ services:
     image: apache/kafka:3.9.0
     container_name: nemobil-kafka
     restart: unless-stopped
+    networks:
+      - nemobil
 
     environment:
+      KAFKA_NODE_ID: "1"
 
-      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
 
-      KAFKA_PROCESS_ROLES:
-        broker,controller
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
 
-      KAFKA_LISTENERS:
-        PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
 
-      KAFKA_ADVERTISED_LISTENERS:
-        PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
 
-      KAFKA_CONTROLLER_LISTENER_NAMES:
-        CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
 
-      KAFKA_CONTROLLER_QUORUM_VOTERS:
-        1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
 
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:
-        1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
 
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR:
-        1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
 
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR:
-        1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
 
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS:
-        0
-
-      CLUSTER_ID:
-        MkU3OEVBNTcwNTJENDM2Qk
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
 
     volumes:
       - kafka-data:/var/lib/kafka/data
@@ -129,8 +138,13 @@ services:
 
 volumes:
 
-  postgres-data:
-
   keycloak-postgres-data:
 
   kafka-data:
+
+  stellio-postgres-data:
+  
+  
+networks:
+  nemobil:
+    name: nemobil

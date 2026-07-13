@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://stellio-postgres:5432/stellio
+    username: ${STELLIO_DB_USER}
+    password: ${STELLIO_DB_PASSWORD}
+
+  kafka:
+    bootstrap-servers: kafka:9092
