@@ -1,2 +1,0 @@
-CREATE DATABASE stellio_search;
-CREATE DATABASE stellio_subscription;

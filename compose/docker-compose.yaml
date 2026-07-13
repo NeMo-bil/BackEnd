@@ -26,21 +26,23 @@ services:
       retries: 10
 
 
+
   stellio-postgres:
-    image: postgres:16
+    image: stellio/stellio-timescale-postgis:16-2.26.4-3.6
     container_name: nemobil-stellio-postgres
     restart: unless-stopped
     networks:
       - nemobil
 
     environment:
-      POSTGRES_DB: stellio
+      POSTGRES_DBNAME: ${STELLIO_SEARCH_DB_DATABASE},${STELLIO_SUBSCRIPTION_DB_DATABASE}
       POSTGRES_USER: ${STELLIO_DB_USER}
-      POSTGRES_PASSWORD: ${STELLIO_DB_PASSWORD}
+      POSTGRES_PASS: ${STELLIO_DB_PASSWORD}
+      POSTGRES_MULTIPLE_EXTENSIONS: postgis,timescaledb,pgcrypto
+      ACCEPT_TIMESCALE_TUNING: "TRUE"
 
     volumes:
       - stellio-postgres-data:/var/lib/postgresql/data
-      - ../config/stellio/init:/docker-entrypoint-initdb.d
 
     healthcheck:
       test:
@@ -51,6 +53,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
 
 
   keycloak:
@@ -99,6 +102,7 @@ services:
         condition: service_healthy
 
 
+
   kafka:
     image: apache/kafka:3.9.0
     container_name: nemobil-kafka
@@ -131,7 +135,89 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+
+
+
+  search-service:
+    container_name: "${CONTAINER_NAME_PREFIX}stellio-search-service"
+    image: stellio/stellio-search-service:${STELLIO_DOCKER_TAG}
+    restart: unless-stopped
+    networks:
+      - nemobil
+
+    environment:
+      - SPRING_PROFILES_ACTIVE=${ENVIRONMENT}
+      - SPRING_R2DBC_URL=r2dbc:pool:postgresql://stellio-postgres/${STELLIO_SEARCH_DB_DATABASE}
+      - SPRING_FLYWAY_URL=jdbc:postgresql://stellio-postgres/${STELLIO_SEARCH_DB_DATABASE}
+      - SPRING_R2DBC_USERNAME=${STELLIO_DB_USER}
+      - SPRING_R2DBC_PASSWORD=${STELLIO_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - APPLICATION_AUTHENTICATION_ENABLED=${STELLIO_AUTHENTICATION_ENABLED}
+      - STELLIO_AUTHENTICATION_ALLOW_PUBLIC_PERMISSION=${STELLIO_AUTHENTICATION_ALLOW_PUBLIC_PERMISSION}
+      - APPLICATION_TENANTS_0_ISSUER=${APPLICATION_TENANTS_0_ISSUER}
+      - APPLICATION_TENANTS_0_NAME=${APPLICATION_TENANTS_0_NAME}
+      - APPLICATION_TENANTS_0_DBSCHEMA=${APPLICATION_TENANTS_0_DBSCHEMA}
+      - APPLICATION_PAGINATION_LIMIT-DEFAULT=${APPLICATION_PAGINATION_LIMIT_DEFAULT}
+      - APPLICATION_PAGINATION_LIMIT-MAX=${APPLICATION_PAGINATION_LIMIT_MAX}
+      - APPLICATION_PAGINATION_TEMPORAL-LIMIT=${APPLICATION_PAGINATION_TEMPORAL_LIMIT}
+
+    depends_on:
+      stellio-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  api-gateway:
+    container_name: nemobil-stellio-api-gateway
+    image: stellio/stellio-api-gateway:2.31.2
+    restart: unless-stopped
+    networks:
+      - nemobil
+
+    environment:
+      - SPRING_PROFILES_ACTIVE=${ENVIRONMENT}
+      - APPLICATION_SEARCH_SERVICE_URL=http://search-service:8083
+      - APPLICATION_SUBSCRIPTION_SERVICE_URL=http://subscription-service:8084
       
+    ports:
+      - "8081:8080"
+
+
+  subscription-service:
+    container_name: "${CONTAINER_NAME_PREFIX}stellio-subscription-service"
+    image: stellio/stellio-subscription-service:${STELLIO_DOCKER_TAG}
+    restart: unless-stopped
+    networks:
+      - nemobil
+
+    environment:
+      - SPRING_PROFILES_ACTIVE=${ENVIRONMENT}
+      - SPRING_R2DBC_URL=r2dbc:pool:postgresql://stellio-postgres/${STELLIO_SUBSCRIPTION_DB_DATABASE}
+      - SPRING_FLYWAY_URL=jdbc:postgresql://stellio-postgres/${STELLIO_SUBSCRIPTION_DB_DATABASE}
+      - SPRING_R2DBC_USERNAME=${STELLIO_DB_USER}
+      - SPRING_R2DBC_PASSWORD=${STELLIO_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - APPLICATION_AUTHENTICATION_ENABLED=${STELLIO_AUTHENTICATION_ENABLED}
+      - STELLIO_AUTHENTICATION_ALLOW_PUBLIC_PERMISSION=${STELLIO_AUTHENTICATION_ALLOW_PUBLIC_PERMISSION}
+      - APPLICATION_TENANTS_0_ISSUER=${APPLICATION_TENANTS_0_ISSUER}
+      - APPLICATION_TENANTS_0_NAME=${APPLICATION_TENANTS_0_NAME}
+      - APPLICATION_TENANTS_0_DBSCHEMA=${APPLICATION_TENANTS_0_DBSCHEMA}
+      - APPLICATION_TENANTS_0_CLIENTID=${APPLICATION_TENANTS_0_CLIENTID}
+      - APPLICATION_TENANTS_0_CLIENTSECRET=${APPLICATION_TENANTS_0_CLIENTSECRET}
+      - SUBSCRIPTION_ENTITY-SERVICE-URL=${SUBSCRIPTION_ENTITY_SERVICE_URL}
+      - SUBSCRIPTION_STELLIO_URL=${SUBSCRIPTION_STELLIO_URL}
+      - APPLICATION_PAGINATION_LIMIT-DEFAULT=${APPLICATION_PAGINATION_LIMIT_DEFAULT}
+      - APPLICATION_PAGINATION_LIMIT-MAX=${APPLICATION_PAGINATION_LIMIT_MAX}
+    ports:
+      - "${SUBSCRIPTION_SERVICE_PORT:-8084}:8084"
+    depends_on:
+      stellio-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+
+
   nodered:
     image: nodered/node-red:4.1
     container_name: nemobil-nodered
