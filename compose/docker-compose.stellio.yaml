@@ -1,6 +1,0 @@
-services:
-
-
-networks:
-  nemobil:
-    external: true

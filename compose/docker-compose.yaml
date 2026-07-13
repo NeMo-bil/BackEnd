@@ -131,11 +131,30 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+      
+  nodered:
+    image: nodered/node-red:4.1
+    container_name: nemobil-nodered
+    restart: unless-stopped
+
+    ports:
+      - "1880:1880"
+
+    networks:
+      - nemobil
+
+    volumes:
+      - nodered-data:/data
+
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 volumes:
   keycloak-postgres-data:
   kafka-data:
   stellio-postgres-data:
+  nodered-data:
   
   
 networks:
