@@ -1,61 +1,24 @@
 services:
 
-  keycloak-postgres:
-    image: postgres:16
-    container_name: nemobil-keycloak-postgres
+  # APISIX
+  apisix:
+    image: apache/apisix:3.13.0-debian
+    container_name: nemobil-apisix
     restart: unless-stopped
+
     networks:
       - nemobil
 
-    environment:
-      POSTGRES_DB: keycloak
-      POSTGRES_USER: ${KEYCLOAK_DB_USER}
-      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    ports:
+      - "8080:9080"
 
     volumes:
-      - keycloak-postgres-data:/var/lib/postgresql/data
-
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${KEYCLOAK_DB_USER}"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - ./apisix/config.yaml:/usr/local/apisix/conf/config.yaml
+      - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml
 
 
 
-  stellio-postgres:
-    image: stellio/stellio-timescale-postgis:16-2.26.4-3.6
-    container_name: nemobil-stellio-postgres
-    restart: unless-stopped
-    networks:
-      - nemobil
-
-    environment:
-      POSTGRES_DBNAME: ${STELLIO_SEARCH_DB_DATABASE},${STELLIO_SUBSCRIPTION_DB_DATABASE}
-      POSTGRES_USER: ${STELLIO_DB_USER}
-      POSTGRES_PASS: ${STELLIO_DB_PASSWORD}
-      POSTGRES_MULTIPLE_EXTENSIONS: postgis,timescaledb,pgcrypto
-      ACCEPT_TIMESCALE_TUNING: "TRUE"
-
-    volumes:
-      - stellio-postgres-data:/var/lib/postgresql/data
-
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${STELLIO_DB_USER}"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-
-
+  # Keycloak and its PostgreSQL DB
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
     container_name: nemobil-keycloak
@@ -94,15 +57,37 @@ services:
       timeout: 5s
       retries: 15
 
-    ports:
-          - "8080:8080"
-
     depends_on:
       keycloak-postgres:
         condition: service_healthy
 
+  keycloak-postgres:
+    image: postgres:16
+    container_name: nemobil-keycloak-postgres
+    restart: unless-stopped
+    networks:
+      - nemobil
+
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KEYCLOAK_DB_USER}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+
+    volumes:
+      - keycloak-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${KEYCLOAK_DB_USER}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 
+  # Stellio with its Kafka, PostgreSQL DB, API Gateway, Search and Subscription Services
   kafka:
     image: apache/kafka:3.9.0
     container_name: nemobil-kafka
@@ -136,8 +121,45 @@ services:
       timeout: 10s
       retries: 10
 
+  stellio-postgres:
+    image: stellio/stellio-timescale-postgis:16-2.26.4-3.6
+    container_name: nemobil-stellio-postgres
+    restart: unless-stopped
+    networks:
+      - nemobil
 
+    environment:
+      POSTGRES_DBNAME: ${STELLIO_SEARCH_DB_DATABASE},${STELLIO_SUBSCRIPTION_DB_DATABASE}
+      POSTGRES_USER: ${STELLIO_DB_USER}
+      POSTGRES_PASS: ${STELLIO_DB_PASSWORD}
+      POSTGRES_MULTIPLE_EXTENSIONS: postgis,timescaledb,pgcrypto
+      ACCEPT_TIMESCALE_TUNING: "TRUE"
 
+    volumes:
+      - stellio-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${STELLIO_DB_USER}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    container_name: nemobil-stellio-api-gateway
+    image: stellio/stellio-api-gateway:2.31.2
+    restart: unless-stopped
+    networks:
+      - nemobil
+
+    environment:
+      - SPRING_PROFILES_ACTIVE=${ENVIRONMENT}
+      - APPLICATION_SEARCH_SERVICE_URL=http://search-service:8083
+      - APPLICATION_SUBSCRIPTION_SERVICE_URL=http://subscription-service:8084
+      
   search-service:
     container_name: "${CONTAINER_NAME_PREFIX}stellio-search-service"
     image: stellio/stellio-search-service:${STELLIO_DOCKER_TAG}
@@ -167,22 +189,6 @@ services:
       kafka:
         condition: service_started
 
-  api-gateway:
-    container_name: nemobil-stellio-api-gateway
-    image: stellio/stellio-api-gateway:2.31.2
-    restart: unless-stopped
-    networks:
-      - nemobil
-
-    environment:
-      - SPRING_PROFILES_ACTIVE=${ENVIRONMENT}
-      - APPLICATION_SEARCH_SERVICE_URL=http://search-service:8083
-      - APPLICATION_SUBSCRIPTION_SERVICE_URL=http://subscription-service:8084
-      
-    ports:
-      - "8081:8080"
-
-
   subscription-service:
     container_name: "${CONTAINER_NAME_PREFIX}stellio-subscription-service"
     image: stellio/stellio-subscription-service:${STELLIO_DOCKER_TAG}
@@ -208,8 +214,7 @@ services:
       - SUBSCRIPTION_STELLIO_URL=${SUBSCRIPTION_STELLIO_URL}
       - APPLICATION_PAGINATION_LIMIT-DEFAULT=${APPLICATION_PAGINATION_LIMIT_DEFAULT}
       - APPLICATION_PAGINATION_LIMIT-MAX=${APPLICATION_PAGINATION_LIMIT_MAX}
-    ports:
-      - "${SUBSCRIPTION_SERVICE_PORT:-8084}:8084"
+    
     depends_on:
       stellio-postgres:
         condition: service_healthy
@@ -218,13 +223,11 @@ services:
 
 
 
+  # APISIX and its etcd
   nodered:
     image: nodered/node-red:4.1
     container_name: nemobil-nodered
     restart: unless-stopped
-
-    ports:
-      - "1880:1880"
 
     networks:
       - nemobil
@@ -236,13 +239,18 @@ services:
       kafka:
         condition: service_healthy
 
+
+
+
 volumes:
   keycloak-postgres-data:
   kafka-data:
   stellio-postgres-data:
   nodered-data:
   
-  
+
+
+
 networks:
   nemobil:
     name: nemobil
