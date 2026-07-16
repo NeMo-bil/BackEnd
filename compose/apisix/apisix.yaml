@@ -1,7 +1,24 @@
-routes: []
+_format_version: "3.0"
 
-upstreams: []
+routes:
+  - id: 1
+    uri: /ngsi-ld/*
+    upstream:
+      nodes:
+        "nemobil-stellio-api-gateway:8080": 1
 
-consumers: []
-
-global_rules: []
+  - uri: /auth/*
+    plugins:
+      proxy-rewrite:
+        regex_uri:
+          - "^/auth/(.*)"
+          - "/$1"
+        headers:
+          set:
+            X-Forwarded-Port: "8080"
+            X-Forwarded-Host: "localhost:8080"
+            X-Forwarded-Proto: "http"
+    upstream:
+      nodes:
+        "keycloak:8080": 1        
+#END
