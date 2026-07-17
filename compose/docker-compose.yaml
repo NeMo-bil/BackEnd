@@ -87,6 +87,7 @@ services:
       retries: 10
 
 
+
   # Stellio with its Kafka, PostgreSQL DB, API Gateway, Search and Subscription Services
   kafka:
     image: apache/kafka:3.9.0
@@ -232,6 +233,10 @@ services:
     networks:
       - nemobil
 
+    environment:
+      MQTT_USER: ${MQTT_NODERED_USER}
+      MQTT_PASSWORD: ${MQTT_NODERED_PASSWORD}
+    
     volumes:
       - nodered-data:/data
 
@@ -239,6 +244,22 @@ services:
       kafka:
         condition: service_healthy
 
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: nemobil-mosquitto
+    restart: unless-stopped
+
+    networks:
+      - nemobil
+
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+    ports:
+      - "1883:1883"
 
 
 

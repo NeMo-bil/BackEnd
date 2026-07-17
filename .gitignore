@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 
+mosquitto/config/passwd
+mosquitto/log/
+mosquitto/data/
+
 # OS files
 .DS_Store
 Thumbs.db
