@@ -3,9 +3,9 @@
 .env.*
 !.env.example
 
-mosquitto/config/passwd
-mosquitto/log/
-mosquitto/data/
+compose/mosquitto/config/passwd
+compose/mosquitto/data/
+compose/mosquitto/log/
 
 # OS files
 .DS_Store
