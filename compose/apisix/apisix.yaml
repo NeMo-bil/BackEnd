@@ -7,7 +7,8 @@ routes:
       nodes:
         "nemobil-stellio-api-gateway:8080": 1
 
-  - uri: /auth/*
+  - id: 2
+    uri: /auth/*
     plugins:
       proxy-rewrite:
         regex_uri:
@@ -20,5 +21,17 @@ routes:
             X-Forwarded-Proto: "http"
     upstream:
       nodes:
-        "keycloak:8080": 1        
+        "keycloak:8080": 1      
+
+  - id: 3
+    uri: /nodered/*
+    enable_websocket: true
+    plugins:
+      proxy-rewrite:
+        regex_uri:
+          - "^/nodered/(.*)"
+          - "/$1"
+    upstream:
+      nodes:
+        "nemobil-nodered:1880": 1
 #END
