@@ -281,12 +281,74 @@ services:
 
 
 
+  # Mobile App Backend
+  nemobil-core-api:
+    image: boostfiware/nemobil-coreapi:1.1.0
+    container_name: nemobil-core-api
+    restart: unless-stopped
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    environment:
+      # Web server
+      HTTP_PORT: ${HTTP_PORT}
+      GLOBAL_PREFIX: ${GLOBAL_PREFIX}
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED}
+
+      # POIs
+      POIS_ENABLED: ${POIS_ENABLED}
+      POIS_ADMIN_PASSWORD: ${POIS_ADMIN_PASSWORD}
+      POIS_FILE_PATH: ${POIS_FILE_PATH}
+
+      # Frontend
+      CORS: ${CORS}
+      REDIRECT_URL: ${KEYCLOAK_REDIRECT_ENDPOINT}
+
+      # Keycloak
+      TOKEN_ENDPOINT: ${KEYCLOAK_INTERNAL_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+      REGISTER_ENDPOINT: ${KEYCLOAK_PUBLIC_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/registrations
+      JWKS_URL: ${KEYCLOAK_INTERNAL_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
+      CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+
+      SERVICE_ACCOUNT_USER: ${KEYCLOAK_SERVICE_ACCOUNT_USER}
+      SERVICE_ACCOUNT_PASSWORD: ${KEYCLOAK_SERVICE_ACCOUNT_PASSWORD}
+
+      # Stellio
+      CONTEXT_API_URL: ${STELLIO_CONTEXT_API_URL}
+      NGSI_JSON_LD_CONTEXT: ${NEMOBIL_NGSI_JSON_LD_CONTEXT}
+
+      # Geocoding
+      LOCATIONIQ_API_KEY: ${LOCATIONIQ_API_KEY}
+      LOCATIONIQ_URL: ${LOCATIONIQ_URL}
+
+      NOMINATIM_URL: ${NOMINATIM_URL}
+      NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT}
+      NOMINATIM_COUNTRY_CODES: ${NOMINATIM_COUNTRY_CODES}
+      NOMINATIM_LIMIT: ${NOMINATIM_LIMIT}
+
+    networks:
+      - nemobil
+
+    volumes:
+      - pois-data:/data
+
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+
+
+
 volumes:
   keycloak-postgres-data:
   kafka-data:
   stellio-postgres-data:
   nodered-data:
-  
+  pois-data:
 
 
 
