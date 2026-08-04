@@ -20,7 +20,8 @@ services:
 
   # Keycloak and its PostgreSQL DB
   keycloak:
-    image: quay.io/keycloak/keycloak:26.5
+    # image: quay.io/keycloak/keycloak:26.5
+    image: quay.io/keycloak/keycloak:21.1.1
     container_name: nemobil-keycloak
     restart: unless-stopped
     networks:
@@ -150,8 +151,8 @@ services:
       retries: 10
 
   api-gateway:
+    image: stellio/stellio-api-gateway:${STELLIO_DOCKER_TAG}
     container_name: nemobil-stellio-api-gateway
-    image: stellio/stellio-api-gateway:2.31.2
     restart: unless-stopped
     networks:
       - nemobil
@@ -162,8 +163,8 @@ services:
       - APPLICATION_SUBSCRIPTION_SERVICE_URL=http://subscription-service:8084
       
   search-service:
-    container_name: "${CONTAINER_NAME_PREFIX}stellio-search-service"
     image: stellio/stellio-search-service:${STELLIO_DOCKER_TAG}
+    container_name: "${CONTAINER_NAME_PREFIX}stellio-search-service"
     restart: unless-stopped
     networks:
       - nemobil
@@ -224,7 +225,7 @@ services:
 
 
 
-  # APISIX and its etcd
+  # NodeRed
   nodered:
     image: nodered/node-red:4.1
     container_name: nemobil-nodered
@@ -245,6 +246,8 @@ services:
         condition: service_healthy
 
 
+
+  # Mosquitto MQTT Broker
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: nemobil-mosquitto
@@ -260,6 +263,7 @@ services:
 
     ports:
       - "1883:1883"
+
 
 
 
