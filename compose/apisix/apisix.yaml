@@ -1,12 +1,21 @@
 _format_version: "3.0"
 
 routes:
+  # Stellio route 
   - id: 1
     uri: /ngsi-ld/*
+    plugins:
+      proxy-rewrite:
+        headers:
+          remove:
+            - fiware-service
+          set:
+            NGSILD-Tenant: "urn:ngsi-ld:tenant:default"
     upstream:
       nodes:
         "nemobil-stellio-api-gateway:8080": 1
 
+  # Keycloak main route
   - id: 2
     uri: /auth/*
     plugins:
@@ -19,11 +28,20 @@ routes:
             X-Forwarded-Port: "8080"
             X-Forwarded-Host: "localhost:8080"
             X-Forwarded-Proto: "http"
+            X-Forwarded-Prefix: "/auth"
     upstream:
       nodes:
         "keycloak:8080": 1      
 
+  # Keycloak URI resources
   - id: 3
+    uri: /resources/*
+    upstream:
+      nodes:
+        "keycloak:8080": 1
+
+  # NodeRed route
+  - id: 4
     uri: /nodered/*
     enable_websocket: true
     plugins:
@@ -34,4 +52,21 @@ routes:
     upstream:
       nodes:
         "nemobil-nodered:1880": 1
+
+
+
+  - id: 5
+    uri: /api/*
+    upstream:
+      nodes:
+        "nemobil-core-api:9001": 1
+        
+  # Catch-all route.
+  # Must remain the final route so that all specific platform routes
+  # (/auth, /ngsi-ld, /nodered, ...) are matched first.
+  - id: 999
+    uri: /*
+    upstream:
+      nodes:
+        "nemobil-pwa:9000": 1
 #END

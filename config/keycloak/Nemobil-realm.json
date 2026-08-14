@@ -11,10 +11,74 @@
       {
         "name": "stellio-admin",
         "description": "Stellio administrator"
+      },
+      {
+        "name": "stellio-creator",
+        "description": "Stellio creator"
       }
     ]
   },
 
+  "clientScopes": [
+      {
+        "name" : "roles",
+        "description" : "OpenID Connect scope for add user roles to the access token",
+        "protocol" : "openid-connect",
+        "attributes" : {
+          "include.in.token.scope" : "false",
+          "display.on.consent.screen" : "true",
+          "consent.screen.text" : "${rolesScopeConsentText}"
+        },
+        "protocolMappers" : [ 
+            {
+               "name" : "client roles",
+               "protocol" : "openid-connect",
+               "protocolMapper" : "oidc-usermodel-client-role-mapper",
+               "consentRequired" : false,
+               "config" : {
+                 "user.attribute" : "foo",
+                 "access.token.claim" : "true",
+                 "claim.name" : "resource_access.${client_id}.roles",
+                 "jsonType.label" : "String",
+                 "multivalued" : "true"
+                 }
+            }, 
+            {
+               "name" : "realm roles",
+               "protocol" : "openid-connect",
+               "protocolMapper" : "oidc-usermodel-realm-role-mapper",
+               "consentRequired" : false,
+               "config" : {
+                 "user.attribute" : "foo",
+                 "access.token.claim" : "true",
+                 "claim.name" : "realm_access.roles",
+                 "jsonType.label" : "String",
+                 "multivalued" : "true"
+                 }
+            }, 
+            {
+               "name" : "audience resolve",
+               "protocol" : "openid-connect",
+               "protocolMapper" : "oidc-audience-resolve-mapper",
+               "consentRequired" : false,
+               "config" : { }
+            } 
+      ]},
+      {
+        "name": "api:read",
+        "protocol": "openid-connect"
+      },
+      {
+        "name": "api:write",
+        "protocol": "openid-connect"
+      },
+      {
+        "name": "api:delete",
+        "protocol": "openid-connect"
+      }
+  ],
+    
+    
   "clients": [
     {
       "clientId": "nemobil-app",
@@ -37,7 +101,24 @@
 
       "webOrigins": [
         "*"
-      ]
+      ],
+    "defaultClientScopes": [
+      "web-origins",
+      "acr",
+      "profile",
+      "roles",
+      "email"
+      ],
+
+    "optionalClientScopes": [
+      "address",
+      "phone",
+      "offline_access",
+      "microprofile-jwt",
+      "api:read",
+      "api:write",
+      "api:delete"
+      ] 
     }
   ],
 
@@ -64,7 +145,6 @@
       ],
 
       "realmRoles": [
-        "user",
         "stellio-admin"
       ]
     },
@@ -91,8 +171,7 @@
       ],
 
       "realmRoles": [
-        "user",
-        "stellio-admin"
+        "stellio-creator"
       ]
     },
 
