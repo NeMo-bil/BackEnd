@@ -285,7 +285,7 @@ services:
 
   # Mobile App Backend
   nemobil-core-api:
-    image: boostfiware/nemobil-coreapi:1.1.0
+    image: boostfiware/nemobil-coreapi:1.1.1
     container_name: nemobil-core-api
     restart: unless-stopped
 
