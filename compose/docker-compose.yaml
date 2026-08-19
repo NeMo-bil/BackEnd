@@ -368,7 +368,7 @@ services:
       DATAPOLICY_PDF_EN: ${DATAPOLICY_PDF_EN}
 
     volumes:
-      - ./nemobil-pwa-privacydocs:/usr/share/nginx/html/datenschutz:ro
+      - ./privacydocs:/usr/share/nginx/html/privacydocs:ro
 
     depends_on:
       - nemobil-core-api
