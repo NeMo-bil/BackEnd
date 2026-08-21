@@ -22,6 +22,13 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
+echo "PWD=$(pwd)"
+echo "Script directory=$(cd "$(dirname "$0")" && pwd)"
+ls -l .env
+
+grep '^MQTT_NODERED_USER=' .env || echo "grep failed"
+
+
 
 #
 # Read FRONTEND_DEMO-USER credentials from .env
