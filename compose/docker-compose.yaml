@@ -36,8 +36,8 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-      # 26.5 KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
-      # 26.5 KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      # 26 KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      # 26 KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: keycloak
@@ -48,18 +48,18 @@ services:
       KC_HEALTH_ENABLED: "true"
 
     volumes:
-      - ../config/keycloak:/opt/keycloak/data/import
+      - ./keycloak:/opt/keycloak/data/import
 
     # Healthcheck 26.5
     # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q UP"
-    #     ]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 15
+      # test:
+        # [
+          # "CMD-SHELL",
+          # "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q UP"
+        # ]
+      # interval: 10s
+      # timeout: 5s
+      # retries: 15
 
 
     # Healthcheck 21.1.1
@@ -251,17 +251,27 @@ services:
       - nemobil
 
     environment:
-      MQTT_USER: ${MQTT_NODERED_USER}
-      MQTT_PASSWORD: ${MQTT_NODERED_PASSWORD}
-    
+      NODERED_MQTT_SERVER: ${NODERED_MQTT_SERVER}
+      NODERED_MQTT_PORT: ${NODERED_MQTT_PORT}
+      NODERED_MQTT_USER: ${MQTT_NODERED_USER}
+      NODERED_MQTT_PASSWORD: ${MQTT_NODERED_PASSWORD}
+      NODERED_KC_TOKEN_URL: ${KEYCLOAK_INTERNAL_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token
+      NODERED_KC_CLIENT_ID: ${NODERED_KC_CLIENT_ID}
+      NODERED_KC_CLIENT_SECRET: ${NODERED_KC_CLIENT_SECRET}
+      NODERED_KC_STELLIO_SERVICEACCOUNT_USERNAME: ${NODERED_KC_STELLIO_SERVICEACCOUNT_USERNAME}
+      NODERED_KC_STELLIO_SERVICEACCOUNT_PASSWORD: ${NODERED_KC_STELLIO_SERVICEACCOUNT_PASSWORD}
+      NODERED_NGSI_LD_SERVER: ${NODERED_NGSI_LD_SERVER}
+      NODERED_NGSILD_TENANT: ${APPLICATION_TENANTS_0_NAME}
+      FLOWS: nemobil-flows.json
+      
     volumes:
-      - nodered-data:/data
+      - ./nodered:/data
 
     depends_on:
       kafka:
         condition: service_healthy
-
-
+        
+        
 
   # Mosquitto MQTT Broker
   mosquitto:
@@ -345,7 +355,7 @@ services:
 
   # Mobile App Backend
   nemobil-pwa:
-    image: boostfiware/nemobil-pwa:1.1.0
+    image: boostfiware/nemobil-pwa:1.1.1
     container_name: nemobil-pwa
     restart: unless-stopped
 

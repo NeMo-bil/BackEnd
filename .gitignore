@@ -7,6 +7,10 @@ compose/mosquitto/config/passwd
 compose/mosquitto/data/
 compose/mosquitto/log/
 
+
+compose/nodered/*
+!compose/nodered/nemobil-flows.json
+
 # OS files
 .DS_Store
 Thumbs.db

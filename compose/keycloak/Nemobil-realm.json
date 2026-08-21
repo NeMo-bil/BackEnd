@@ -84,15 +84,10 @@
       "clientId": "nemobil-app",
       "name": "NeMo-bil Mobile App",
       "enabled": true,
-
       "protocol": "openid-connect",
-
       "publicClient": false,
-
       "secret": "Nemobil_Client_Secret_2026!",
-
       "directAccessGrantsEnabled": true,
-
       "standardFlowEnabled": true,
 
       "redirectUris": [
@@ -126,16 +121,12 @@
 
     {
       "username": "stellio-admin@test.de",
-      "enabled": true,
-        
+      "enabled": true,       
       "firstName": "Stellio",
       "lastName": "Administrator",
-        
       "requiredActions": [],
-
       "email": "stellio-admin@test.de",
       "emailVerified": true,
-
       "credentials": [
         {
           "type": "password",
@@ -143,7 +134,6 @@
           "temporary": false
         }
       ],
-
       "realmRoles": [
         "stellio-admin"
       ]
@@ -153,15 +143,11 @@
     {
       "username": "stellio-serviceaccount@test.de",
       "enabled": true,
-        
       "firstName": "Stellio",
       "lastName": "Service Account",
-
       "requiredActions": [],
-
       "email": "stellio-serviceaccount@test.de",
       "emailVerified": true,
-
       "credentials": [
         {
           "type": "password",
@@ -169,25 +155,20 @@
           "temporary": false
         }
       ],
-
       "realmRoles": [
         "stellio-creator"
       ]
     },
 
-
+      
     {
       "username": "app-user-1@test.de",
       "enabled": true,
-        
       "firstName": "Application",
       "lastName": "User One",
-
       "requiredActions": [],
-
       "email": "app-user-1@test.de",
       "emailVerified": true,
-
       "credentials": [
         {
           "type": "password",
@@ -195,7 +176,6 @@
           "temporary": false
         }
       ],
-
       "realmRoles": [
         "user"
       ]
@@ -205,15 +185,11 @@
     {
       "username": "app-user-2@test.de",
       "enabled": true,
-        
       "firstName": "Application",
       "lastName": "User Two",
-
       "requiredActions": [],
-
       "email": "app-user-2@test.de",
       "emailVerified": true,
-
       "credentials": [
         {
           "type": "password",
@@ -221,7 +197,6 @@
           "temporary": false
         }
       ],
-
       "realmRoles": [
         "user"
       ]
