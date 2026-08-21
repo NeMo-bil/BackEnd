@@ -12,12 +12,6 @@ echo "Starting NeMo.bil..."
 echo "======================================"
 
 
-#
-# Read FRONTEND_DEMO-USER credentials from .env
-#
-FRONTEND_DEMO_USER="$(grep '^FRONTEND_DEMO_USER=' .env | cut -d= -f2-)"
-FRONTEND_DEMO_USER_PASSWORD="$(grep '^FRONTEND_DEMO_USER_PASSWORD=' .env | cut -d= -f2-)"
-
 
 #
 # Create default configuration if necessary
@@ -27,6 +21,14 @@ if [ ! -f .env ]; then
     echo "Creating .env from .env.example..."
     cp .env.example .env
 fi
+
+
+#
+# Read FRONTEND_DEMO-USER credentials from .env
+#
+FRONTEND_DEMO_USER="$(grep '^FRONTEND_DEMO_USER=' .env | cut -d= -f2-)"
+FRONTEND_DEMO_USER_PASSWORD="$(grep '^FRONTEND_DEMO_USER_PASSWORD=' .env | cut -d= -f2-)"
+
 
 echo
 echo "Step 1/4 - Creating MQTT password..."
