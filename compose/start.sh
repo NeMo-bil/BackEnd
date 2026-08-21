@@ -37,9 +37,9 @@ FRONTEND_DEMO_USER="$(grep '^FRONTEND_DEMO_USER=' .env | cut -d= -f2-)"
 FRONTEND_DEMO_USER_PASSWORD="$(grep '^FRONTEND_DEMO_USER_PASSWORD=' .env | cut -d= -f2-)"
 
 
-echo
-echo "Step 1/4 - Creating MQTT password..."
-./scripts/create-mqtt-password.sh
+# echo
+# echo "Step 1/4 - Creating MQTT password..."
+# ./scripts/create-mqtt-password.sh
 
 echo
 echo "Step 2/4 - Starting Docker containers..."
