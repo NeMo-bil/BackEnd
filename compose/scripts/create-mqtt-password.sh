@@ -19,8 +19,9 @@ ENV_FILE="$SCRIPT_DIR/../.env"
 #
 # Read MQTT credentials from .env
 #
-MQTT_NODERED_USER="$(grep '^MQTT_NODERED_USER=' $ENV_FILE | cut -d= -f2-)"
-MQTT_NODERED_PASSWORD="$(grep '^MQTT_NODERED_PASSWORD=' $ENV_FILE | cut -d= -f2-)"
+MQTT_NODERED_USER="$(grep '^MQTT_NODERED_USER=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r')"
+MQTT_NODERED_PASSWORD="$(grep '^MQTT_NODERED_PASSWORD=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r')"
+
 
 #
 # Basic validation
