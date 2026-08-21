@@ -11,11 +11,16 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env"
+
+
 #
 # Read MQTT credentials from .env
 #
-MQTT_NODERED_USER="$(grep '^MQTT_NODERED_USER=' .env | cut -d= -f2-)"
-MQTT_NODERED_PASSWORD="$(grep '^MQTT_NODERED_PASSWORD=' .env | cut -d= -f2-)"
+MQTT_NODERED_USER="$(grep '^MQTT_NODERED_USER=' $ENV_FILE | cut -d= -f2-)"
+MQTT_NODERED_PASSWORD="$(grep '^MQTT_NODERED_PASSWORD=' $ENV_FILE | cut -d= -f2-)"
 
 #
 # Basic validation
