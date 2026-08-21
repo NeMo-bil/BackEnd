@@ -25,7 +25,7 @@ FRONTEND_DEMO_USER_PASSWORD="$(grep '^FRONTEND_DEMO_USER_PASSWORD=' .env | cut -
 if [ ! -f .env ]; then
     echo "No .env found."
     echo "Creating .env from .env.template..."
-    cp .env.template .env
+    cp .env.example .env
 fi
 
 echo
