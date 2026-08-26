@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ACCESS_TOKEN=$("$SCRIPT_DIR/get-token.sh")
 
 echo
-echo "ACCESS_TOKEN: POP"
+echo "ACCESS_TOKEN (80 Characters only):"
 echo "${ACCESS_TOKEN:0:80}..."
 echo
 

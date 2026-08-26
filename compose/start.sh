@@ -3,12 +3,12 @@
 set -e
 
 ########################################
-# NeMo.bil Local Startup
+# NeMo.bil Local Startup Script
 ########################################
 
 echo
 echo "======================================"
-echo "Starting NeMo.bil..."
+echo "Starting NeMo.bil Project Setup..."
 echo "======================================"
 
 
@@ -22,19 +22,18 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
-echo "PWD=$(pwd)"
-echo "Script directory=$(cd "$(dirname "$0")" && pwd)"
-ls -l .env
 
+
+#
+# Create default configuration if necessary
+#
+echo 
+echo "Info about .env file and test-grepping a sample envVar"
+echo "Directory with .env file, PWD=$(pwd)"
+ls -l .env
+echo "envVar MQTT_NODERED_USER extracted from .env: "
 grep '^MQTT_NODERED_USER=' .env || echo "grep failed"
 
-
-
-#
-# Read FRONTEND_DEMO-USER credentials from .env
-#
-FRONTEND_DEMO_USER="$(grep '^FRONTEND_DEMO_USER=' .env | cut -d= -f2-)"
-FRONTEND_DEMO_USER_PASSWORD="$(grep '^FRONTEND_DEMO_USER_PASSWORD=' .env | cut -d= -f2-)"
 
 
 # echo
@@ -53,6 +52,13 @@ echo
 echo "Step 4/4 - Populating demo data..."
 ./scripts/populate-demo-data.sh
 
+
+
+#
+# Read FRONTEND_DEMO-USER credentials from .env for demo user info
+#
+FRONTEND_DEMO_USER="$(grep '^FRONTEND_DEMO_USER=' .env | cut -d= -f2-)"
+FRONTEND_DEMO_USER_PASSWORD="$(grep '^FRONTEND_DEMO_USER_PASSWORD=' .env | cut -d= -f2-)"
 
 echo
 echo "======================================"

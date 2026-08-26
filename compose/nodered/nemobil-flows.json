@@ -363,9 +363,10 @@
         "url": "/mockmove",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 240,
-        "y": 1580,
+        "x": 100,
+        "y": 960,
         "wires": [
             [
                 "d43a4affda998ff1",
@@ -382,28 +383,28 @@
         "tosidebar": true,
         "console": false,
         "tostatus": true,
-        "complete": "payload.data[0]",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "counter",
-        "x": 760,
-        "y": 1620,
+        "x": 640,
+        "y": 1000,
         "wires": []
     },
     {
         "id": "7bb0b4047d8e4f08",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "9 Func Interpolation 1x UF",
-        "func": "let data = msg.payload.data[0];\n\nconst result = data.user_id === \"urn:ngsi-ld:User:34d16d95-2a61-4c64-b675-af7b078e8466\";\n\nif (!result) {\n    return\n}\n\n\n// Intervalldauer in Sekunden\nconst interval = 10;\n\n// Id für Response-url gespeichert\nmsg.msg_id = msg.payload.data[0].id;\n\n// Prüfen ob alles da ist\nif (!data.location || !data.nextStopLocation || !data.nextStopArrival) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\n// Zeit sauber erzeugen\nlet now = new Date();\nlet arrival = new Date(data.nextStopArrival);\n\n// Zeitdifferenz in Sekunden\nlet timeDiff = (arrival.getTime() - now.getTime()) / 1000;\n\n// Koordinaten\nlet latStart = data.location.coordinates[0];\nlet lonStart = data.location.coordinates[1];\n\nlet latEnd = data.nextStopLocation.coordinates[0];\nlet lonEnd = data.nextStopLocation.coordinates[1];\n\nmsg.payload.data[0].timeDiff = timeDiff;\nmsg.payload.data[0].latStart = latStart;\nmsg.payload.data[0].lonStart = lonStart;\nmsg.payload.data[0].latEnd = latEnd;\nmsg.payload.data[0].lonEnd = lonEnd;\n\n\n// Wenn Zeit abgelaufen → Ziel\nif (timeDiff <= 0) {\n\n    msg.payload.data[0].locationUpdate = {\n        \"type\":\"GeoProperty\",\n        \"value\":{\"type\":\"Point\",\n            \"coordinates\":[latEnd,lonEnd]}\n    }\n    msg.payload.data[0].stateADStack = \"StopReached\";\n\n    if (msg.payload.data[0].state === \"Approaching\") {\n        msg.payload.data[0].state = \"Boarding\";\n    } else if (msg.payload.data[0].state === \"Riding\") {\n        msg.payload.data[0].state = \"OffBoarding\";\n    }\n\n    return msg;\n}\n\n// Differenzen\nlet deltaLat = latEnd - latStart;\nlet deltaLon = lonEnd - lonStart;\n\nmsg.payload.data[0].deltaLat = deltaLat;\nmsg.payload.data[0].deltaLon = deltaLon;\n\n\n// Faktor\nlet factor = interval / timeDiff;\nif (factor >= 1) {\n        factor = 1;\n        msg.payload.data[0].stateADStack = \"StopReached\";\n\n        if (msg.payload.data[0].state === \"Approaching\") {\n            msg.payload.data[0].state = \"Boarding\";\n        } else if (msg.payload.data[0].state === \"RidingToKonvoi\") {\n            msg.payload.data[0].state = \"RidingInKonvoi\";\n        } else if (msg.payload.data[0].state === \"RidingInKonvoi\") {\n            msg.payload.data[0].state = \"Riding\";\n        } else if (msg.payload.data[0].state === \"Riding\") {\n            msg.payload.data[0].state = \"OffBoarding\";\n        }\n    }\n\n// Neue Position\nlet latNew = latStart + deltaLat * factor;\nlet lonNew = lonStart + deltaLon * factor;\n\n// Ergebnis\nmsg.payload.data[0].locationUpdate = {\n    \"type\":\"GeoProperty\",\n    \"value\":{\"type\":\"Point\",\n        \"coordinates\":[latNew,lonNew]}\n}\n\nreturn msg;",
+        "name": "9 Interpolation",
+        "func": "let data = msg.payload.data[0];\n\n// Intervalldauer in Sekunden\nconst interval = 10;\n\n// Id für Response-url gespeichert\nmsg.msg_id = msg.payload.data[0].id;\n\n// Prüfen ob alles da ist\nif (!data.location || !data.nextStopLocation || !data.nextStopArrival || \n    !data.dropoffLocation || !data.dropoffLocation) {\n        node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\n// Zeit sauber erzeugen\nlet now = new Date();\nlet arrival = new Date(data.nextStopArrival);\n\n// Zeitdifferenz in Sekunden\nlet timeDiff = (arrival.getTime() - now.getTime()) / 1000;\n\n// \nlet factor = interval / timeDiff;\n\n// Koordinaten\nlet latStart = data.location.coordinates[0];\nlet lonStart = data.location.coordinates[1];\n\nlet latEnd = data.nextStopLocation.coordinates[0];\nlet lonEnd = data.nextStopLocation.coordinates[1];\n\nmsg.payload.data[0].timeDiff = timeDiff;\nmsg.payload.data[0].latStart = latStart;\nmsg.payload.data[0].lonStart = lonStart;\nmsg.payload.data[0].latEnd = latEnd;\nmsg.payload.data[0].lonEnd = lonEnd;\n\n\n// Wenn Zeit abgelaufen → Annahme: Ziel erreicht\nif (timeDiff <= 0) {\n\n    msg.payload.data[0].locationUpdate = {\n        \"type\":\"GeoProperty\",\n        \"value\":{\"type\":\"Point\",\n            \"coordinates\":[latEnd,lonEnd]}\n    }\n    msg.payload.data[0].stateADStack = \"StopReached\";\n\n    // return msg;\n}\n\nif (msg.payload.data[0].stateADStack != \"StopReached\") {\n\n    // Differenzen\n    let deltaLat = latEnd - latStart;\n    let deltaLon = lonEnd - lonStart;\n\n    msg.payload.data[0].deltaLat = deltaLat;\n    msg.payload.data[0].deltaLon = deltaLon;\n\n\n    // Faktor\n    if (factor >= 1) {\n            factor = 1;\n            msg.payload.data[0].stateADStack = \"StopReached\";\n    }\n\n    // Neue Position\n    let latNew = latStart + deltaLat * factor;\n    let lonNew = lonStart + deltaLon * factor;\n\n    // Ergebnis\n    msg.payload.data[0].locationUpdate = {\n        \"type\":\"GeoProperty\",\n        \"value\":{\"type\":\"Point\",\n            \"coordinates\":[latNew,lonNew]}\n    }\n\n}   \n\n// Faktor\nif (msg.payload.data[0].stateADStack == \"StopReached\") {\n\n        if (msg.payload.data[0].state === \"Approaching\") {\n            msg.payload.data[0].state = \"Boarding\";\n            msg.payload.data[0].nextStopLocation = msg.payload.data[0].dropoffLocation;\n            msg.payload.data[0].nextStopArrival = msg.payload.data[0].dropoffTime;\n        // } else if (msg.payload.data[0].state === \"RidingToKonvoi\") {\n        //     msg.payload.data[0].state = \"RidingInKonvoi\";\n        // } else if (msg.payload.data[0].state === \"RidingInKonvoi\") {\n        //     msg.payload.data[0].state = \"Riding\";\n        } else if (msg.payload.data[0].state === \"Riding\") {\n            msg.payload.data[0].state = \"OffBoarding\";\n        }\n    }\n\n\n\nmsg.myData = {};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 820,
-        "y": 1580,
+        "x": 660,
+        "y": 960,
         "wires": [
             [
                 "2a66558a905b026b",
@@ -415,8 +416,8 @@
         "id": "2a66558a905b026b",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "9 DB PL nach Streckeninterpolation",
-        "active": true,
+        "name": "9 DB myData Interpolation",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -424,8 +425,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1090,
-        "y": 1620,
+        "x": 1060,
+        "y": 1000,
         "wires": []
     },
     {
@@ -435,27 +436,28 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 440,
-        "y": 1620,
+        "x": 380,
+        "y": 1000,
         "wires": []
     },
     {
         "id": "01686705e0156a53",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "9 Create PL Log",
-        "func": "let data = msg.payload.data[0];\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nlet warnMessage = \"\";\n\n// Conditionally add each attribute if present\nif (data.locationUpdate.value.coordinates[0] !== undefined && data.locationUpdate.value.coordinates[1] !== undefined) {\n    ngsiEntity.location = {\n        \"type\": \"GeoProperty\",\n        \"value\": {\n            \"type\": \"Point\",\n            \"coordinates\": [data.locationUpdate.value.coordinates[0],data.locationUpdate.value.coordinates[1]]\n        }\n    };\n\n    warnMessage = warnMessage + \"Neue Cab Location: \" + ngsiEntity.location.value.coordinates[0] + \" - \" + ngsiEntity.location.value.coordinates[1];\n\n}\n\nif (data.stateADStack  !== undefined && data.stateADStack === \"StopReached\") {\n    ngsiEntity.stateADStack = {\n        \"type\": \"Property\",\n        \"value\": data.stateADStack\n    };\n\n    warnMessage = warnMessage + \" - stateADStack: \" + ngsiEntity.stateADStack.value;\n\n}\n\n\nif (data.state !== undefined) {\n\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": data.state\n    };\n\n    if (data.state == \"Approaching\" || data.state == \"Riding\") {\n\n    warnMessage = warnMessage + (\" -  Cab Status: \" + ngsiEntity.state.value);\n\n    } else if (data.state == \"Boarding\") {\n\n    warnMessage = warnMessage + (\" -  Neuer Cab Status: \" + ngsiEntity.state.value);\n    \n    } else if (data.state == \"OffBoarding\") {\n\n    warnMessage = warnMessage + (\" -  Neuer Cab Status: \" + ngsiEntity.state.value);\n    \n    }\n}\n\n// node.warn(warnMessage);\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
+        "name": "9 mockmove PL Log",
+        "func": "let data = msg.payload.data[0];\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nlet warnMessage = \"\";\n\n// Conditionally add each attribute if present\nif (data.locationUpdate.value.coordinates[0] !== undefined && data.locationUpdate.value.coordinates[1] !== undefined) {\n    ngsiEntity.location = {\n        \"type\": \"GeoProperty\",\n        \"value\": {\n            \"type\": \"Point\",\n            \"coordinates\": [data.locationUpdate.value.coordinates[0],data.locationUpdate.value.coordinates[1]]\n        }\n    };\n\n    // warnMessage = warnMessage + \"Neue Cab Location: \" + ngsiEntity.location.value.coordinates[0] + \" - \" + ngsiEntity.location.value.coordinates[1];\n\n}\n\nif (data.nextStopLocation.coordinates[0] !== undefined && data.nextStopLocation.coordinates[1] !== undefined) {\n    ngsiEntity.nextStopLocation = {\n        \"type\": \"GeoProperty\",\n        \"value\": {\n            \"type\": \"Point\",\n            \"coordinates\": [data.nextStopLocation.coordinates[0],data.nextStopLocation.coordinates[1]]\n        }\n    };\n\n    // warnMessage = warnMessage + \" - nextStopLocation: \" + ngsiEntity.nextStopLocation.value.coordinates[0] + \" - \" + ngsiEntity.nextStopLocation.value.coordinates[1];\n\n}\n\nif (data.nextStopArrival  !== undefined) {\n    ngsiEntity.nextStopArrival = {\n        \"type\": \"Property\",\n        \"value\": data.nextStopArrival\n    };\n\n    // warnMessage = warnMessage + \" - nextStopArrival: \" + ngsiEntity.nextStopArrival.value;\n\n}\n\nif (data.stateADStack  !== undefined && data.stateADStack === \"StopReached\") {\n    ngsiEntity.stateADStack = {\n        \"type\": \"Property\",\n        \"value\": data.stateADStack\n    };\n\n    // warnMessage = warnMessage + \" - stateADStack: \" + ngsiEntity.stateADStack.value;\n\n}\n\nif (data.state !== undefined) {\n\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": data.state\n    };\n\n    if (data.state == \"Approaching\" || data.state == \"Riding\") {\n\n    warnMessage = warnMessage + (\" -  Cab Status: \" + ngsiEntity.state.value);\n\n    } else if (data.state == \"Boarding\") {\n\n    warnMessage = warnMessage + (\" -  Neuer Cab Status: \" + ngsiEntity.state.value);\n    \n    } else if (data.state == \"OffBoarding\") {\n\n    warnMessage = warnMessage + (\" -  Neuer Cab Status: \" + ngsiEntity.state.value);\n    \n    }\n}\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1160,
-        "y": 1580,
+        "x": 1040,
+        "y": 960,
         "wires": [
             [
-                "2deeb1e6df59c62c"
+                "46af8fc374e29422",
+                "3cd27f8bca904ac0"
             ]
         ]
     },
@@ -463,7 +465,7 @@
         "id": "552e2f61400c1218",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "9 DB NGSI-LD PATCH PL",
+        "name": "9 DB mockmove PATCH",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -472,24 +474,24 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1590,
-        "y": 1620,
+        "x": 1750,
+        "y": 1000,
         "wires": []
     },
     {
         "id": "2deeb1e6df59c62c",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "9 Create PATCH req",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/ld+json\",\n    \"Accept\": \"application/ld+json\",\n    \"NGSILD-Tenant\": \"default_dataspace\"\n};\n\nmsg.method = 'PATCH';\nmsg.url = env.get(\"NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.msg_id + \"/attrs\"\n\n// node.warn(msg.url)\n\nreturn msg;",
+        "name": "9 mockmove PATCH",
+        "func": "msg.method = 'PATCH';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.msg_id + \"/attrs\"\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1360,
-        "y": 1580,
+        "x": 1480,
+        "y": 960,
         "wires": [
             [
                 "75d421621e965bad",
@@ -501,7 +503,7 @@
         "id": "75d421621e965bad",
         "type": "http request",
         "z": "2b46c00a75dc9c44",
-        "name": "9 Update Cab movement",
+        "name": "9 Update mockmove",
         "method": "use",
         "ret": "txt",
         "paytoqs": "ignore",
@@ -513,8 +515,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1590,
-        "y": 1580,
+        "x": 1740,
+        "y": 960,
         "wires": [
             [
                 "51b5cfab59cb209c"
@@ -525,17 +527,17 @@
         "id": "51b5cfab59cb209c",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "9 Final PL StCo",
+        "name": "9 StatCode",
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "statusCode",
         "targetType": "msg",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1860,
-        "y": 1580,
+        "statusType": "counter",
+        "x": 1970,
+        "y": 960,
         "wires": []
     },
     {
@@ -555,8 +557,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 430,
-        "y": 1580,
+        "x": 370,
+        "y": 960,
         "wires": [
             [
                 "625ede3402d7506b"
@@ -580,8 +582,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 550,
-        "y": 1580,
+        "x": 490,
+        "y": 960,
         "wires": [
             [
                 "7bb0b4047d8e4f08",
@@ -650,7 +652,7 @@
         "id": "ebd13b486f42383c",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "1 myData TP",
+        "name": "1 DB myData TP",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -659,7 +661,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 830,
+        "x": 1030,
         "y": 120,
         "wires": []
     },
@@ -686,7 +688,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 820,
+        "x": 1000,
         "y": 80,
         "wires": [
             [
@@ -698,7 +700,7 @@
         "id": "85777153486a6b73",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "1 TP Req",
+        "name": "1 TP POST",
         "func": "msg.method = 'POST';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\"\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
@@ -706,7 +708,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1240,
+        "x": 1450,
         "y": 80,
         "wires": [
             [
@@ -731,7 +733,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1440,
+        "x": 1740,
         "y": 80,
         "wires": [
             [
@@ -744,7 +746,7 @@
         "type": "debug",
         "z": "2b46c00a75dc9c44",
         "name": "1 StatCode",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -752,7 +754,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1650,
+        "x": 1970,
         "y": 80,
         "wires": []
     },
@@ -811,7 +813,7 @@
         "id": "c213e891f3487e64",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "1 DB NGSI-LD POST PL",
+        "name": "1 DB TP POST",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -820,7 +822,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1450,
+        "x": 1720,
         "y": 120,
         "wires": []
     },
@@ -829,13 +831,14 @@
         "type": "http in",
         "z": "2b46c00a75dc9c44",
         "d": true,
-        "name": "PB 2 /mocktrips",
+        "name": "PB 2 /mocktrips wihout App",
         "url": "/mocktrips",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 400,
-        "y": 280,
+        "x": 440,
+        "y": 300,
         "wires": [
             [
                 "e2eccccb3762697c",
@@ -857,7 +860,7 @@
         "statusVal": "",
         "statusType": "counter",
         "x": 940,
-        "y": 320,
+        "y": 340,
         "wires": []
     },
     {
@@ -873,7 +876,7 @@
         "finalize": "",
         "libs": [],
         "x": 970,
-        "y": 280,
+        "y": 300,
         "wires": [
             [
                 "536b299e707b50d7",
@@ -895,7 +898,7 @@
         "statusVal": "",
         "statusType": "counter",
         "x": 1280,
-        "y": 320,
+        "y": 340,
         "wires": []
     },
     {
@@ -906,7 +909,7 @@
         "statusCode": "200",
         "headers": {},
         "x": 680,
-        "y": 320,
+        "y": 340,
         "wires": []
     },
     {
@@ -922,7 +925,7 @@
         "finalize": "",
         "libs": [],
         "x": 1250,
-        "y": 280,
+        "y": 300,
         "wires": [
             [
                 "9afe1bc436e0db3b"
@@ -941,8 +944,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1510,
-        "y": 280,
+        "x": 1530,
+        "y": 300,
         "wires": [
             [
                 "38d9b33c9187f40e",
@@ -966,8 +969,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1770,
-        "y": 280,
+        "x": 1790,
+        "y": 300,
         "wires": [
             [
                 "3e58b92e6d45c878"
@@ -982,13 +985,13 @@
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "statusCode",
         "targetType": "msg",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1990,
-        "y": 280,
+        "statusType": "counter",
+        "x": 2030,
+        "y": 300,
         "wires": []
     },
     {
@@ -1009,7 +1012,7 @@
         "repair": false,
         "outputs": 1,
         "x": 670,
-        "y": 280,
+        "y": 300,
         "wires": [
             [
                 "3920232acd2780eb"
@@ -1034,7 +1037,7 @@
         "repair": false,
         "outputs": 1,
         "x": 790,
-        "y": 280,
+        "y": 300,
         "wires": [
             [
                 "9a2862e868d61938",
@@ -1055,8 +1058,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1770,
-        "y": 320,
+        "x": 1790,
+        "y": 340,
         "wires": []
     },
     {
@@ -1068,8 +1071,8 @@
         "method": "post",
         "upload": true,
         "swaggerDoc": "",
-        "x": 150,
-        "y": 380,
+        "x": 130,
+        "y": 500,
         "wires": [
             [
                 "6bf25e9460b2bf45",
@@ -1091,23 +1094,23 @@
         "statusVal": "",
         "statusType": "counter",
         "x": 640,
-        "y": 420,
+        "y": 540,
         "wires": []
     },
     {
         "id": "ad4a07c79abf6ff4",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "myData Trip plnd 3x UF",
-        "func": "// Notification Daten übernehmen\nlet data = msg.payload.data[0];\n\nconst result = data.user === \"urn:ngsi-ld:User:3875626e-fcd5-4a6c-95fe-7505b9ec4e74\" ||\n    data.user === \"urn:ngsi-ld:User:3403b704-1b1d-4d6f-9e83-7b22bfd34c77\" ||\n    data.user === \"urn:ngsi-ld:User:48d37dfc-3fc8-4435-a2b4-92fb9e5a6745\";\n\nif (!result) {\n    return\n}\n\nlet vehicle = \"\";\n\nif (data.user === \"urn:ngsi-ld:User:3875626e-fcd5-4a6c-95fe-7505b9ec4e74\") {\n    vehicle = \"urn:ngsi-ld:Cab:0100\"\n}\n\nif (data.user === \"urn:ngsi-ld:User:3403b704-1b1d-4d6f-9e83-7b22bfd34c77\") {\n    vehicle = \"urn:ngsi-ld:Cab:0101\"\n}\n\nif (data.user === \"urn:ngsi-ld:User:48d37dfc-3fc8-4435-a2b4-92fb9e5a6745\") {\n    vehicle = \"urn:ngsi-ld:Cab:0102\"\n}\n\n\n// Prüfen ob alle benötigten Inputs vorhanden sind \nif (!data.id || !data.type ) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\nmsg.myData = \n    {\n        id: data.id,\n        type: data.type,\n        vehicle: vehicle,\n        status: \"Planned\"\n    };\n\nreturn msg;",
+        "name": "3 myData Trip_plnd Cab1000",
+        "func": "// Notification Daten übernehmen\nlet data = msg.payload.data[0];\n\nlet vehicle = \"urn:ngsi-ld:Cab:1000\";\n\n\n// Prüfen ob alle benötigten Inputs vorhanden sind \nif (!data.id || !data.type || !data.user ) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\nmsg.myData = \n    {\n        id: data.id,\n        type: data.type,\n        vehicle: vehicle,\n        status: \"Planned\",\n        payment: \"Permitted\"\n    };\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 690,
-        "y": 380,
+        "x": 700,
+        "y": 500,
         "wires": [
             [
                 "80ea333d8a888017",
@@ -1119,8 +1122,8 @@
         "id": "80ea333d8a888017",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "3 DB PL nach set Data",
-        "active": true,
+        "name": "3 DB myData_TP_plnd",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -1128,8 +1131,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1000,
-        "y": 420,
+        "x": 1040,
+        "y": 540,
         "wires": []
     },
     {
@@ -1139,15 +1142,15 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 360,
-        "y": 420,
+        "x": 380,
+        "y": 540,
         "wires": []
     },
     {
         "id": "6a03588e9d263cba",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "3 Create PL",
+        "name": "3 Trip_plnd PL",
         "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (data.vehicle !== undefined) {\n    ngsiEntity.vehicle = {\n        \"type\": \"Property\",\n        \"value\": data.vehicle \n    };\n}\n\nif (data.status !== undefined) {\n    ngsiEntity.status = {\n        \"type\": \"Property\",\n        \"value\": data.status \n    };\n}\n\nif (data.payment !== undefined) {\n    ngsiEntity.payment = {\n        \"type\": \"Property\",\n        \"value\": data.payment \n    };\n}\n\nngsiEntity.expectedEnergyRequired = {\n        \"type\": \"Property\",\n        \"value\": 0.0\n    };\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
@@ -1155,11 +1158,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 970,
-        "y": 380,
+        "x": 1020,
+        "y": 500,
         "wires": [
             [
-                "53675e3c859fd6c8"
+                "50d723f8010561a9"
             ]
         ]
     },
@@ -1167,16 +1170,16 @@
         "id": "53675e3c859fd6c8",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "3 Create PATCH req",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/ld+json\",\n    \"Accept\": \"application/ld+json\",\n    \"NGSILD-Tenant\": \"default_dataspace\"\n};\n\nmsg.method = 'PATCH';\nmsg.url = env.get(\"NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.id; \n\n// node.warn(msg.url)\n\nreturn msg;",
+        "name": "3 TP_plnd PATCH",
+        "func": "msg.method = 'PATCH';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.id; \n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1220,
-        "y": 380,
+        "x": 1470,
+        "y": 500,
         "wires": [
             [
                 "7f480785fe14478e",
@@ -1188,7 +1191,7 @@
         "id": "21209c0a654aebb3",
         "type": "http request",
         "z": "2b46c00a75dc9c44",
-        "name": "3 Update Trip planned+cab+paid",
+        "name": "3 Update Trip_plnd",
         "method": "use",
         "ret": "txt",
         "paytoqs": "ignore",
@@ -1200,8 +1203,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1520,
-        "y": 380,
+        "x": 1730,
+        "y": 500,
         "wires": [
             [
                 "d774c7ca26a530d3"
@@ -1216,13 +1219,13 @@
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "statusCode",
         "targetType": "msg",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1790,
-        "y": 380,
+        "statusType": "counter",
+        "x": 1970,
+        "y": 500,
         "wires": []
     },
     {
@@ -1242,8 +1245,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 350,
-        "y": 380,
+        "x": 370,
+        "y": 500,
         "wires": [
             [
                 "315fab7866ba7ecc"
@@ -1267,8 +1270,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 380,
+        "x": 490,
+        "y": 500,
         "wires": [
             [
                 "ad4a07c79abf6ff4",
@@ -1280,7 +1283,7 @@
         "id": "7f480785fe14478e",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "3 DB NGSI-LD PATCH PL",
+        "name": "3 DB TP_plnd PATCH",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -1289,21 +1292,23 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1490,
-        "y": 420,
+        "x": 1740,
+        "y": 540,
         "wires": []
     },
     {
         "id": "289d63581c36e993",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
-        "name": "GE 3a /cabapproach",
+        "d": true,
+        "name": "RW 3a /cabapproach stopkey only",
         "url": "/cabapproach",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 250,
-        "y": 1480,
+        "x": 460,
+        "y": 840,
         "wires": [
             [
                 "069d211ff1d74ecc",
@@ -1324,8 +1329,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 1520,
+        "x": 950,
+        "y": 880,
         "wires": []
     },
     {
@@ -1340,8 +1345,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 830,
-        "y": 1480,
+        "x": 1010,
+        "y": 840,
         "wires": [
             [
                 "660a8a03eb6e3bbb",
@@ -1356,8 +1361,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 480,
-        "y": 1520,
+        "x": 680,
+        "y": 880,
         "wires": []
     },
     {
@@ -1372,8 +1377,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1050,
-        "y": 1480,
+        "x": 1250,
+        "y": 840,
         "wires": [
             [
                 "3c9059ce7da74740"
@@ -1392,8 +1397,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1260,
-        "y": 1480,
+        "x": 1520,
+        "y": 840,
         "wires": [
             [
                 "61d499b9710f98c6",
@@ -1417,8 +1422,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1620,
-        "y": 1480,
+        "x": 1800,
+        "y": 840,
         "wires": [
             [
                 "792c0bb886f6c1af"
@@ -1433,13 +1438,13 @@
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "true",
         "targetType": "full",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1860,
-        "y": 1480,
+        "statusType": "counter",
+        "x": 2040,
+        "y": 840,
         "wires": []
     },
     {
@@ -1459,8 +1464,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 1480,
+        "x": 670,
+        "y": 840,
         "wires": [
             [
                 "655db6878a1e42f6"
@@ -1484,8 +1489,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 1480,
+        "x": 790,
+        "y": 840,
         "wires": [
             [
                 "28627bfea4e532cb",
@@ -1506,8 +1511,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1620,
-        "y": 1520,
+        "x": 1800,
+        "y": 880,
         "wires": []
     },
     {
@@ -1523,21 +1528,23 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "counter",
-        "x": 550,
-        "y": 2140,
+        "x": 710,
+        "y": 2260,
         "wires": []
     },
     {
         "id": "fe700f014215b009",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
+        "d": true,
         "name": "99 /test",
         "url": "/test",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 210,
-        "y": 2140,
+        "x": 370,
+        "y": 2260,
         "wires": [
             [
                 "76df76b1755edef3",
@@ -1555,7 +1562,7 @@
         "method": "post",
         "upload": true,
         "swaggerDoc": "",
-        "x": 260,
+        "x": 420,
         "y": 2380,
         "wires": [
             [
@@ -1571,7 +1578,7 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 440,
+        "x": 600,
         "y": 2420,
         "wires": []
     },
@@ -1592,7 +1599,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 430,
+        "x": 590,
         "y": 2380,
         "wires": [
             [
@@ -1613,7 +1620,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 760,
+        "x": 920,
         "y": 2420,
         "wires": []
     },
@@ -1634,7 +1641,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 550,
+        "x": 710,
         "y": 2380,
         "wires": [
             [
@@ -1655,7 +1662,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
+        "x": 940,
         "y": 2380,
         "wires": [
             [
@@ -1675,7 +1682,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1020,
+        "x": 1180,
         "y": 2380,
         "wires": [
             [
@@ -1695,7 +1702,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1220,
+        "x": 1380,
         "y": 2380,
         "wires": [
             [
@@ -1720,7 +1727,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1590,
+        "x": 1750,
         "y": 2380,
         "wires": [
             [
@@ -1741,7 +1748,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1860,
+        "x": 2020,
         "y": 2380,
         "wires": []
     },
@@ -1758,7 +1765,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1610,
+        "x": 1770,
         "y": 2420,
         "wires": []
     },
@@ -1771,8 +1778,8 @@
         "method": "post",
         "upload": true,
         "swaggerDoc": "",
-        "x": 260,
-        "y": 1120,
+        "x": 120,
+        "y": 1520,
         "wires": [
             [
                 "b963c8f5ba598dd2",
@@ -1793,8 +1800,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 1160,
+        "x": 650,
+        "y": 1560,
         "wires": []
     },
     {
@@ -1809,8 +1816,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
-        "y": 1120,
+        "x": 660,
+        "y": 1520,
         "wires": [
             [
                 "f73f23e7bbd5f277",
@@ -1825,8 +1832,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 480,
-        "y": 1160,
+        "x": 380,
+        "y": 1560,
         "wires": []
     },
     {
@@ -1834,18 +1841,18 @@
         "type": "function",
         "z": "2b46c00a75dc9c44",
         "name": "5a Create PL Log",
-        "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (data.new_trip_status !== undefined) {\n    ngsiEntity.status = {\n        \"type\": \"Property\",\n        \"value\": data.new_trip_status\n    };\n}\n\n//node.warn(\"Trip: \" + msg.myData.trip_id + \" wird als durchgeführt markiert,\"\n// + \" -  Neuer Trip Status: \" + ngsiEntity.status.value);\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
+        "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (data.new_trip_status !== undefined) {\n    ngsiEntity.status = {\n        \"type\": \"Property\",\n        \"value\": data.new_trip_status\n    };\n}\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1110,
-        "y": 1120,
+        "x": 1030,
+        "y": 1520,
         "wires": [
             [
-                "5bf3fccf873f8b9a"
+                "eb7a8eeed59c4c64"
             ]
         ]
     },
@@ -1854,15 +1861,15 @@
         "type": "function",
         "z": "2b46c00a75dc9c44",
         "name": "5a Create PATCH Trip req",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/ld+json\",\n    \"Accept\": \"application/ld+json\",\n    \"NGSILD-Tenant\": \"default_dataspace\"\n};\n\nmsg.method = 'PATCH';\nmsg.url = env.get(\"NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.trip_id; \n\n// node.warn(msg.url)\n\nreturn msg;",
+        "func": "msg.method = 'PATCH';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.trip_id; \n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1350,
-        "y": 1120,
+        "x": 1490,
+        "y": 1520,
         "wires": [
             [
                 "3320d20843424d21",
@@ -1886,8 +1893,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1610,
-        "y": 1120,
+        "x": 1750,
+        "y": 1520,
         "wires": [
             [
                 "6d2001c3fbef51f6"
@@ -1907,8 +1914,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1860,
-        "y": 1120,
+        "x": 1980,
+        "y": 1520,
         "wires": []
     },
     {
@@ -1928,8 +1935,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 1120,
+        "x": 370,
+        "y": 1520,
         "wires": [
             [
                 "2723c350d834d8b6"
@@ -1953,8 +1960,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 1120,
+        "x": 490,
+        "y": 1520,
         "wires": [
             [
                 "dd882ca313a4d90f",
@@ -1975,8 +1982,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1620,
-        "y": 1160,
+        "x": 1760,
+        "y": 1560,
         "wires": []
     },
     {
@@ -1991,11 +1998,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1110,
-        "y": 1220,
+        "x": 1030,
+        "y": 1620,
         "wires": [
             [
-                "bb668d340713890f"
+                "adf43272a7c2357d"
             ]
         ]
     },
@@ -2004,15 +2011,15 @@
         "type": "function",
         "z": "2b46c00a75dc9c44",
         "name": "5b Create PATCH Cab req",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/ld+json\",\n    \"Accept\": \"application/ld+json\",\n    \"NGSILD-Tenant\": \"default_dataspace\"\n};\n\nmsg.method = 'PATCH';\nmsg.url = env.get(\"NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.cab_id; \n\n// node.warn(msg.url)\n\nreturn msg;",
+        "func": "msg.method = 'PATCH';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.cab_id; \n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1350,
-        "y": 1220,
+        "x": 1490,
+        "y": 1620,
         "wires": [
             [
                 "68b60d1488920454",
@@ -2036,8 +2043,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1590,
-        "y": 1220,
+        "x": 1730,
+        "y": 1620,
         "wires": [
             [
                 "9026de340b357e8b"
@@ -2057,8 +2064,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1860,
-        "y": 1220,
+        "x": 1980,
+        "y": 1620,
         "wires": []
     },
     {
@@ -2074,8 +2081,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1620,
-        "y": 1260,
+        "x": 1760,
+        "y": 1660,
         "wires": []
     },
     {
@@ -2085,8 +2092,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 440,
-        "y": 2200,
+        "x": 600,
+        "y": 2320,
         "wires": []
     },
     {
@@ -2099,8 +2106,8 @@
         "method": "post",
         "upload": true,
         "swaggerDoc": "",
-        "x": 220,
-        "y": 1820,
+        "x": 380,
+        "y": 1920,
         "wires": [
             [
                 "e5935c9710f41838",
@@ -2115,8 +2122,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 760,
-        "y": 1820,
+        "x": 920,
+        "y": 1920,
         "wires": []
     },
     {
@@ -2136,8 +2143,8 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 450,
-        "y": 1820,
+        "x": 610,
+        "y": 1920,
         "wires": [
             [
                 "b379c8eaab6a0ba7"
@@ -2157,8 +2164,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 460,
-        "y": 1860,
+        "x": 620,
+        "y": 1960,
         "wires": []
     },
     {
@@ -2279,7 +2286,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1500,
+        "x": 1520,
         "y": 200,
         "wires": [
             [
@@ -2304,7 +2311,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1760,
+        "x": 1780,
         "y": 200,
         "wires": [
             [
@@ -2320,12 +2327,12 @@
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "statusCode",
         "targetType": "msg",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1990,
+        "statusType": "counter",
+        "x": 2030,
         "y": 200,
         "wires": []
     },
@@ -2393,7 +2400,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1770,
+        "x": 1790,
         "y": 240,
         "wires": []
     },
@@ -2405,13 +2412,13 @@
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "statusCode",
         "targetType": "msg",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1850,
-        "y": 1380,
+        "statusType": "counter",
+        "x": 2030,
+        "y": 400,
         "wires": []
     },
     {
@@ -2430,8 +2437,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1630,
-        "y": 1380,
+        "x": 1810,
+        "y": 400,
         "wires": [
             [
                 "5fe45fd91e09bb29"
@@ -2450,8 +2457,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1260,
-        "y": 1380,
+        "x": 1520,
+        "y": 400,
         "wires": [
             [
                 "4223be58cd86114c",
@@ -2471,8 +2478,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1050,
-        "y": 1380,
+        "x": 1250,
+        "y": 400,
         "wires": [
             [
                 "c932e9a182706d49"
@@ -2492,8 +2499,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1620,
-        "y": 1420,
+        "x": 1800,
+        "y": 440,
         "wires": []
     },
     {
@@ -2508,8 +2515,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 810,
-        "y": 1380,
+        "x": 990,
+        "y": 400,
         "wires": [
             [
                 "0abab8c3a27504ca",
@@ -2534,8 +2541,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 550,
-        "y": 1380,
+        "x": 790,
+        "y": 400,
         "wires": [
             [
                 "f06729f6bb474ba0",
@@ -2556,8 +2563,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1090,
-        "y": 1420,
+        "x": 1290,
+        "y": 440,
         "wires": []
     },
     {
@@ -2577,8 +2584,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 430,
-        "y": 1380,
+        "x": 670,
+        "y": 400,
         "wires": [
             [
                 "44c871c521bc8567"
@@ -2598,21 +2605,23 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 1420,
+        "x": 950,
+        "y": 440,
         "wires": []
     },
     {
         "id": "89482a3fd8b97fc0",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
+        "d": true,
         "name": "GE 2a /trippaid",
         "url": "/trippaid",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 240,
-        "y": 1380,
+        "x": 400,
+        "y": 400,
         "wires": [
             [
                 "4d664dd5d710f848",
@@ -2627,8 +2636,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 440,
-        "y": 1420,
+        "x": 680,
+        "y": 440,
         "wires": []
     },
     {
@@ -2648,8 +2657,8 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 1000,
-        "y": 1580,
+        "x": 840,
+        "y": 960,
         "wires": [
             [
                 "01686705e0156a53"
@@ -2660,21 +2669,20 @@
         "id": "7c529206a2204d0b",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "4a Create PL",
-        "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (msg.myData.cab_id === \"urn:ngsi-ld:Cab:0100\" ||\n    msg.myData.chainedPosition > 0 ) {\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": \"RidingToKonvoi\"\n    };\n\n    node.warn(\"Info: \" + msg.myData.cab_id + \" - \" + msg.myData.chainedPosition)\n    \n} else {\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": \"Riding\"\n    };\n}\n\nif (data.stateADStack !== undefined) {\n    ngsiEntity.stateADStack = {\n        \"type\": \"Property\",\n        \"value\": data.stateADStack\n    };\n}\n\nif (data.user_id !== undefined) {\n    ngsiEntity.user_id = {\n        \"type\": \"Property\",\n        \"value\": data.user_id\n    };\n}\n\nif (data.cab_id !== undefined) {\n    ngsiEntity.vehicle = {\n        \"type\": \"Property\",\n        \"value\": data.cab_id\n    };\n}\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
+        "name": "4a Cab Riding PL",
+        "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (msg.myData.cab_id === \"urn:ngsi-ld:Cab:0100\" ||\n    msg.myData.chainedPosition > 0 ) {\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": \"RidingToKonvoi\"\n\n\n    };\n\n    node.warn(\"Info: \" + msg.myData.cab_id + \" - \" + msg.myData.chainedPosition)\n    \n} else {\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": \"Riding\"\n    };\n}\n\nif (data.stateADStack !== undefined) {\n    ngsiEntity.stateADStack = {\n        \"type\": \"Property\",\n        \"value\": data.stateADStack\n    };\n}\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1090,
-        "y": 960,
+        "x": 1030,
+        "y": 1320,
         "wires": [
             [
-                "fae873681e624766",
                 "96f224bd9af2dfdd",
-                "b2723070dc5e00eb"
+                "67684eabd437107c"
             ]
         ]
     },
@@ -2691,8 +2699,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1860,
-        "y": 960,
+        "x": 1980,
+        "y": 1320,
         "wires": []
     },
     {
@@ -2711,8 +2719,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1600,
-        "y": 960,
+        "x": 1740,
+        "y": 1320,
         "wires": [
             [
                 "072bd9ec7d7fd503"
@@ -2724,15 +2732,15 @@
         "type": "function",
         "z": "2b46c00a75dc9c44",
         "name": "4a Create PATCH req",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/ld+json\",\n    \"Accept\": \"application/ld+json\",\n    \"NGSILD-Tenant\": \"default_dataspace\"\n};\n\nmsg.method = 'PATCH';\nmsg.url = env.get(\"NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.cab_id; \n\n// node.warn(msg.url)\n\nreturn msg;",
+        "func": "msg.method = 'PATCH';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.cab_id; \n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1340,
-        "y": 960,
+        "x": 1520,
+        "y": 1320,
         "wires": [
             [
                 "4499f26e9aa64776"
@@ -2740,36 +2748,19 @@
         ]
     },
     {
-        "id": "b2723070dc5e00eb",
-        "type": "debug",
-        "z": "2b46c00a75dc9c44",
-        "name": "4a DB NGSI-LD PATCH PL",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "counter",
-        "x": 1340,
-        "y": 1060,
-        "wires": []
-    },
-    {
         "id": "d9170a217abbfaf9",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "myData Cab Riding",
-        "func": "// Notification Daten übernehmen\nlet data = msg.payload.data[0];\n\n// Prüfen ob alle benötigten Inputs aus dem Trip vorhanden sind\nif (!data.id) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\nmsg.myData = \n    {\n        cab_id: data.id,\n        stateADStack: \"OnRoute\",\n        state: data.state,\n        user_id: data.user_id,\n        chainedPosition: data.chainedPosition\n    };\n\nreturn msg;",
+        "name": "4a myData Cab Riding",
+        "func": "// Notification Daten übernehmen\nlet data = msg.payload.data[0];\n\n// Prüfen ob alle benötigten Inputs aus dem Trip vorhanden sind\nif (!data.id || !data.state || !data.user_id) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\nmsg.myData = \n    {\n        cab_id: data.id,\n        stateADStack: \"OnRoute\",\n        state: data.state,\n        user_id: data.user_id,\n        chainedPosition: data.chainedPosition\n    };\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 790,
-        "y": 960,
+        "x": 680,
+        "y": 1320,
         "wires": [
             [
                 "7c529206a2204d0b",
@@ -2794,8 +2785,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 960,
+        "x": 490,
+        "y": 1320,
         "wires": [
             [
                 "d9170a217abbfaf9",
@@ -2820,8 +2811,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 960,
+        "x": 370,
+        "y": 1320,
         "wires": [
             [
                 "322a4ad5c6f72b50"
@@ -2837,12 +2828,12 @@
         "tosidebar": true,
         "console": false,
         "tostatus": true,
-        "complete": "   \"Cab: \" & msg.payload.data[0].id & \t   \" - stopKey: \" & msg.payload.data[0].stopKey &  \t   \" - state: \" & msg.payload.data[0].state &  \t   \" - stateADStack: \" & msg.payload.data[0].stateADStack\t",
+        "complete": "payload.data[0]",
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 1000,
+        "x": 650,
+        "y": 1360,
         "wires": []
     },
     {
@@ -2853,9 +2844,10 @@
         "url": "/cabriding",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 240,
-        "y": 960,
+        "x": 100,
+        "y": 1320,
         "wires": [
             [
                 "1d6870ff9c4f327b",
@@ -2870,8 +2862,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 480,
-        "y": 1000,
+        "x": 380,
+        "y": 1360,
         "wires": []
     },
     {
@@ -2882,13 +2874,13 @@
         "active": false,
         "tosidebar": true,
         "console": false,
-        "tostatus": false,
+        "tostatus": true,
         "complete": "statusCode",
         "targetType": "msg",
         "statusVal": "",
-        "statusType": "auto",
-        "x": 1850,
-        "y": 580,
+        "statusType": "counter",
+        "x": 1970,
+        "y": 620,
         "wires": []
     },
     {
@@ -2907,8 +2899,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1610,
-        "y": 580,
+        "x": 1750,
+        "y": 620,
         "wires": [
             [
                 "52344b752c2b8311"
@@ -2919,16 +2911,16 @@
         "id": "aefbe5d51db7c62a",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "2b Create PATCH req",
-        "func": "msg.headers = {\n    \"Content-Type\": \"application/ld+json\",\n    \"Accept\": \"application/ld+json\",\n    \"NGSILD-Tenant\": \"default_dataspace\"\n};\n\nmsg.method = 'PATCH';\nmsg.url = env.get(\"NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.cab_id; \n\n// node.warn(msg.url)\n\nreturn msg;",
+        "name": "2b TripID to cab PATCH",
+        "func": "msg.method = 'PATCH';\nmsg.url = env.get(\"NODERED_NGSI_LD_SERVER\") + \"/ngsi-ld/v1/entities/\" + msg.myData.cab_id; \n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1340,
-        "y": 580,
+        "x": 1490,
+        "y": 620,
         "wires": [
             [
                 "e01de86dc696c3ac",
@@ -2940,19 +2932,19 @@
         "id": "3ff8ec9a61523f19",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "2b Create PL",
-        "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (data.lastBookingTrip_id !== undefined) {\n    ngsiEntity.lastBookingTrip_id = {\n        \"type\": \"Property\",\n        \"value\": data.lastBookingTrip_id\n    };\n}\n\nif (data.user_id !== undefined) {\n    ngsiEntity.user_id = {\n        \"type\": \"Property\",\n        \"value\": data.user_id\n    };\n}\n\nif (data.state !== undefined) {\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": data.state\n    };\n}\n\nif (data.stateADStack !== undefined) {\n    ngsiEntity.stateADStack = {\n        \"type\": \"Property\",\n        \"value\": data.stateADStack\n    };\n}\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
+        "name": "2b TripID to cab PL",
+        "func": "let data = msg.myData;\n\n// Initialize NGSI-LD update structure\nlet ngsiEntity = {\n    \"@context\": [\"https://api.npoint.io/d66beea7313de1ad894c\"]\n};\n\nif (data.user_id !== undefined) {\n    ngsiEntity.user_id = {\n        \"type\": \"Property\",\n        \"value\": data.user_id\n    };\n}\n\nif (data.state !== undefined) {\n    ngsiEntity.state = {\n        \"type\": \"Property\",\n        \"value\": data.state\n    };\n}\n\nif (data.stateADStack !== undefined) {\n    ngsiEntity.stateADStack = {\n        \"type\": \"Property\",\n        \"value\": data.stateADStack\n    };\n}\n\nif (data.lastBookingTrip_id !== undefined) {\n    ngsiEntity.lastBookingTrip_id = {\n        \"type\": \"Property\",\n        \"value\": data.lastBookingTrip_id\n    };\n}\n\nif (data.pickupLocation.coordinates[0] !== undefined && data.pickupLocation.coordinates[1] !== undefined) {\n    ngsiEntity.pickupLocation = {\n        \"type\": \"GeoProperty\",\n        \"value\": data.pickupLocation\n    };\n}\n\nif (data.pickupLocation.coordinates[0] !== undefined && data.pickupLocation.coordinates[1] !== undefined) {\n    ngsiEntity.nextStopLocation = {\n        \"type\": \"GeoProperty\",\n        \"value\": data.pickupLocation\n    };\n}\n\nif (data.pickupTime !== undefined) {\n    ngsiEntity.nextStopArrival = {\n        \"type\": \"Property\",\n        \"value\": data.pickupTime\n    };\n}\n\nif (data.dropoffLocation.coordinates[0] !== undefined && data.dropoffLocation.coordinates[1] !== undefined) {\n    ngsiEntity.dropoffLocation = {\n        \"type\": \"GeoProperty\",\n        \"value\": data.dropoffLocation\n    };\n}\n\nif (data.targetTime !== undefined) {\n    ngsiEntity.dropoffTime = {\n        \"type\": \"Property\",\n        \"value\": data.targetTime\n    };\n}\n\nmsg.payload = ngsiEntity;\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1090,
-        "y": 580,
+        "x": 1030,
+        "y": 620,
         "wires": [
             [
-                "aefbe5d51db7c62a"
+                "572306ac1adae9a7"
             ]
         ]
     },
@@ -2960,8 +2952,8 @@
         "id": "e01de86dc696c3ac",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "2b DB NGSI-LD PATCH PL",
-        "active": false,
+        "name": "2b DB TripID to cab PATCH",
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -2969,24 +2961,24 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1620,
-        "y": 620,
+        "x": 1760,
+        "y": 660,
         "wires": []
     },
     {
         "id": "b52b59372ef3837e",
         "type": "function",
         "z": "2b46c00a75dc9c44",
-        "name": "myData TripID to cab + PB Appr 3x UFT",
-        "func": "// Notification Daten übernehmen\nlet data = msg.payload.data[0];\n\n// Prüfen ob alle benötigten Inputs vorhanden sind\nif (!data.id ) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\nmsg.myData = \n    {\n        id: data.id,\n        cab_id: data.vehicle,\n        lastBookingTrip_id: data.id,\n        user_id: data.user\n    };\n\nconst result = data.user === \"urn:ngsi-ld:User:3875626e-fcd5-4a6c-95fe-7505b9ec4e74\" ||\n    data.user === \"urn:ngsi-ld:User:3403b704-1b1d-4d6f-9e83-7b22bfd34c77\" ||\n    data.user === \"urn:ngsi-ld:User:48d37dfc-3fc8-4435-a2b4-92fb9e5a6745\";\n\nif (result) {\n    msg.myData.state = \"Approaching\",\n    msg.myData.stateADStack = \"OnRoute\"\n}\n\n\nreturn msg;",
+        "name": "2b myData TripID to cab (Approaching)",
+        "func": "// Notification Daten übernehmen\nlet data = msg.payload.data[0];\n\n// Prüfen ob alle benötigten Inputs vorhanden sind\nif (!data.id || !data.type || !data.user || !data.vehicle || !data.pickupLocation || !data.pickupTime || !data.dropoffLocation || !data.targetTime) {\n    node.error(\"Fehlende notwendige Felder\", msg);\n    return null;\n}\n\nmsg.myData = \n    {\n        id: data.id,\n        user_id: data.user,\n        cab_id: data.vehicle,\n        state : \"Approaching\",\n        stateADStack : \"OnRoute\",\n        lastBookingTrip_id: data.id,\n        pickupLocation: data.pickupLocation,\n        pickupTime: data.pickupTime,\n        dropoffLocation: data.dropoffLocation,\n        targetTime: data.targetTime\n    };\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 860,
-        "y": 580,
+        "x": 730,
+        "y": 620,
         "wires": [
             [
                 "dc06d8826fe17d38",
@@ -3011,8 +3003,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 580,
+        "x": 490,
+        "y": 620,
         "wires": [
             [
                 "c06138d92e443b12",
@@ -3024,7 +3016,7 @@
         "id": "dc06d8826fe17d38",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "2b DB PL  nach set Data",
+        "name": "2b DB myData TripID to cab",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -3033,8 +3025,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1130,
-        "y": 620,
+        "x": 1060,
+        "y": 660,
         "wires": []
     },
     {
@@ -3054,8 +3046,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 580,
+        "x": 370,
+        "y": 620,
         "wires": [
             [
                 "12ce959121a50a1d"
@@ -3075,8 +3067,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 620,
+        "x": 650,
+        "y": 660,
         "wires": []
     },
     {
@@ -3087,9 +3079,10 @@
         "url": "/tripidtocab",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 250,
-        "y": 580,
+        "x": 110,
+        "y": 620,
         "wires": [
             [
                 "2df5416b712edfde",
@@ -3104,8 +3097,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 480,
-        "y": 620,
+        "x": 380,
+        "y": 660,
         "wires": []
     },
     {
@@ -3115,21 +3108,23 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 440,
-        "y": 1980,
+        "x": 600,
+        "y": 2080,
         "wires": []
     },
     {
         "id": "84faa22ca676013c",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
+        "d": true,
         "name": "99 /test1",
         "url": "/test1",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 220,
-        "y": 1920,
+        "x": 380,
+        "y": 2020,
         "wires": [
             [
                 "82b0b334ac4cebfb",
@@ -3142,7 +3137,7 @@
         "type": "debug",
         "z": "2b46c00a75dc9c44",
         "name": "99 Log Update adStack q=stopReached",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -3150,8 +3145,8 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "counter",
-        "x": 540,
-        "y": 1920,
+        "x": 700,
+        "y": 2020,
         "wires": []
     },
     {
@@ -3159,7 +3154,7 @@
         "type": "debug",
         "z": "2b46c00a75dc9c44",
         "name": "99 Log Update stopKey",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -3167,21 +3162,23 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "counter",
-        "x": 490,
-        "y": 2020,
+        "x": 650,
+        "y": 2140,
         "wires": []
     },
     {
         "id": "54eb831170acce7f",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
+        "d": true,
         "name": "99 /test2",
         "url": "/test2",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 220,
-        "y": 2020,
+        "x": 380,
+        "y": 2140,
         "wires": [
             [
                 "6ae50080d2118371",
@@ -3196,21 +3193,23 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 440,
-        "y": 2080,
+        "x": 600,
+        "y": 2200,
         "wires": []
     },
     {
         "id": "c6a503144bed13fa",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
-        "name": "PB 2c /onroutecmdtocab",
+        "d": true,
+        "name": "PB 2c /onroutecmdtocab CAB only",
         "url": "/onroutecmdtocab",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 270,
-        "y": 680,
+        "x": 460,
+        "y": 740,
         "wires": [
             [
                 "a8f8e47f57c63ed7",
@@ -3225,8 +3224,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 480,
-        "y": 720,
+        "x": 680,
+        "y": 780,
         "wires": []
     },
     {
@@ -3246,8 +3245,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 680,
+        "x": 670,
+        "y": 740,
         "wires": [
             [
                 "6ccc7d36fe955bb6"
@@ -3271,8 +3270,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 680,
+        "x": 790,
+        "y": 740,
         "wires": [
             [
                 "6c86c1bfa0247c50",
@@ -3292,8 +3291,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 820,
-        "y": 680,
+        "x": 1000,
+        "y": 740,
         "wires": [
             [
                 "d0cac7194cb2f290",
@@ -3314,8 +3313,8 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 720,
+        "x": 950,
+        "y": 780,
         "wires": []
     },
     {
@@ -3331,8 +3330,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1130,
-        "y": 720,
+        "x": 1290,
+        "y": 780,
         "wires": []
     },
     {
@@ -3347,8 +3346,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1110,
-        "y": 680,
+        "x": 1270,
+        "y": 740,
         "wires": [
             [
                 "238778828ec9d8e1",
@@ -3369,8 +3368,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1600,
-        "y": 720,
+        "x": 2060,
+        "y": 780,
         "wires": []
     },
     {
@@ -3387,8 +3386,8 @@
         "correl": "",
         "expiry": "",
         "broker": "2cfae533763a2920",
-        "x": 1550,
-        "y": 680,
+        "x": 2010,
+        "y": 740,
         "wires": []
     },
     {
@@ -3403,8 +3402,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1090,
-        "y": 780,
+        "x": 1250,
+        "y": 1100,
         "wires": [
             [
                 "8cae4e37c8a772c1",
@@ -3426,8 +3425,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1860,
-        "y": 780,
+        "x": 2040,
+        "y": 1100,
         "wires": []
     },
     {
@@ -3446,8 +3445,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1600,
-        "y": 780,
+        "x": 1780,
+        "y": 1100,
         "wires": [
             [
                 "781aed1f9491f353"
@@ -3466,8 +3465,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1340,
-        "y": 780,
+        "x": 1520,
+        "y": 1100,
         "wires": [
             [
                 "b6a5c47a3eeae650",
@@ -3488,8 +3487,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1620,
-        "y": 900,
+        "x": 2080,
+        "y": 1140,
         "wires": []
     },
     {
@@ -3504,8 +3503,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 810,
-        "y": 780,
+        "x": 990,
+        "y": 1100,
         "wires": [
             [
                 "1c08b7f6b749be94",
@@ -3530,8 +3529,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 590,
-        "y": 780,
+        "x": 790,
+        "y": 1100,
         "wires": [
             [
                 "9a5fc73a630324d8",
@@ -3556,8 +3555,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 470,
-        "y": 780,
+        "x": 670,
+        "y": 1100,
         "wires": [
             [
                 "4651fdf3063eb42f"
@@ -3569,7 +3568,7 @@
         "type": "debug",
         "z": "2b46c00a75dc9c44",
         "name": "4b NTF PL",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -3577,21 +3576,23 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 770,
-        "y": 820,
+        "x": 950,
+        "y": 1140,
         "wires": []
     },
     {
         "id": "950e1383603d7c57",
         "type": "http in",
         "z": "2b46c00a75dc9c44",
+        "d": true,
         "name": "BE 4b /onstopreached",
         "url": "/onstopreached",
         "method": "post",
         "upload": true,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 260,
-        "y": 780,
+        "x": 420,
+        "y": 1100,
         "wires": [
             [
                 "4483d21b8e82a739",
@@ -3606,8 +3607,8 @@
         "name": "200 RSP",
         "statusCode": "200",
         "headers": {},
-        "x": 480,
-        "y": 820,
+        "x": 680,
+        "y": 1140,
         "wires": []
     },
     {
@@ -3623,8 +3624,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1130,
-        "y": 900,
+        "x": 1290,
+        "y": 1140,
         "wires": []
     },
     {
@@ -3639,8 +3640,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1360,
-        "y": 820,
+        "x": 1800,
+        "y": 1180,
         "wires": [
             [
                 "2586da052adca827",
@@ -3662,8 +3663,8 @@
         "correl": "",
         "expiry": "",
         "broker": "2cfae533763a2920",
-        "x": 1830,
-        "y": 820,
+        "x": 2010,
+        "y": 1180,
         "wires": []
     },
     {
@@ -3679,8 +3680,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1880,
-        "y": 860,
+        "x": 2060,
+        "y": 1220,
         "wires": []
     },
     {
@@ -3688,7 +3689,7 @@
         "type": "debug",
         "z": "2b46c00a75dc9c44",
         "name": "4b DB PL  Create PL",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -3696,14 +3697,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1340,
-        "y": 860,
+        "x": 1520,
+        "y": 1140,
         "wires": []
     },
     {
         "id": "96f224bd9af2dfdd",
         "type": "function",
         "z": "2b46c00a75dc9c44",
+        "d": true,
         "name": "4a Build mqtt payload 3x UF",
         "func": "node.debug(\"Payload:\" +  JSON.stringify(msg.payload))\n\nlet data = msg.payload;\n\nconst result = data.user_id.value === \"urn:ngsi-ld:User:3875626e-fcd5-4a6c-95fe-7505b9ec4e74\" ||\n    data.user_id.value === \"urn:ngsi-ld:User:3403b704-1b1d-4d6f-9e83-7b22bfd34c77\" ||\n    data.user_id.value === \"urn:ngsi-ld:User:48d37dfc-3fc8-4435-a2b4-92fb9e5a6745\";\n\nif (!result) {\n    return\n}\n\nlet json = {}\n\n\nif (data.state.value === \"RidingToKonvoi\") {\n\n    json.payload = {\n        \"ad_nextStopLocationType\":\"Chaining\",\n        \"ad_nextStopLocation_latitude\":51.7223399,\n        \"ad_nextStopLocation_longitude\":8.7871489,\n        \"ad_nextStopArrival\":\"2026-12-31T23:59:00.000Z\",\n        \"ad_koppelindex\":2\n    };\n\n}\n\nelse if (data.state.value === \"Riding\") {\n\n    if (data.vehicle.value === \"urn:ngsi-ld:Cab:0100\") {\n        json.payload = {\n            \"ad_nextStopLocationType\":\"DropOff\",\n            \"ad_nextStopLocation_latitude\":51.7222794,\n            \"ad_nextStopLocation_longitude\":8.7866165,\n            \"ad_nextStopArrival\":\"2026-12-31T23:59:00.000Z\",\n            \"ad_koppelindex\":0\n        }\n    } else {\n        json.payload = {\n            \"ad_nextStopLocationType\":\"DropOff\",\n            \"ad_nextStopLocation_latitude\":51.7223259,\n            \"ad_nextStopLocation_longitude\":8.7854555,\n            \"ad_nextStopArrival\":\"2026-12-31T23:59:00.000Z\",\n            \"ad_koppelindex\": 0\n        }\n    }\n\n}\n\n\njson.topic = \"nemobil/v1/nemo.cab/\" + msg.myData.cab_id + \"/command\"\n\nreturn json;",
         "outputs": 1,
@@ -3712,8 +3714,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1360,
-        "y": 1000,
+        "x": 1540,
+        "y": 1360,
         "wires": [
             [
                 "49725ccf3a9ec663",
@@ -3735,8 +3737,8 @@
         "correl": "",
         "expiry": "",
         "broker": "2cfae533763a2920",
-        "x": 1830,
-        "y": 1000,
+        "x": 1950,
+        "y": 1360,
         "wires": []
     },
     {
@@ -3752,16 +3754,16 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1880,
-        "y": 1040,
+        "x": 2000,
+        "y": 1400,
         "wires": []
     },
     {
         "id": "756202db7f9d53a5",
         "type": "debug",
         "z": "2b46c00a75dc9c44",
-        "name": "4a DB PL  nach set Data",
-        "active": true,
+        "name": "4a DB myData Cab Riding",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -3769,8 +3771,8 @@
         "targetType": "jsonata",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1030,
-        "y": 1060,
+        "x": 1060,
+        "y": 1360,
         "wires": []
     },
     {
@@ -3778,7 +3780,7 @@
         "type": "debug",
         "z": "2b46c00a75dc9c44",
         "name": "3a DB PL  nach set Data",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
@@ -3786,8 +3788,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1090,
-        "y": 1520,
+        "x": 1290,
+        "y": 880,
         "wires": []
     },
     {
@@ -3795,7 +3797,7 @@
         "type": "subflow:dcb45a938f792c3a",
         "z": "2b46c00a75dc9c44",
         "name": "",
-        "x": 1050,
+        "x": 1250,
         "y": 80,
         "wires": [
             [
@@ -3812,6 +3814,101 @@
         "x": 100,
         "y": 120,
         "wires": []
+    },
+    {
+        "id": "50d723f8010561a9",
+        "type": "subflow:dcb45a938f792c3a",
+        "z": "2b46c00a75dc9c44",
+        "name": "",
+        "x": 1250,
+        "y": 500,
+        "wires": [
+            [
+                "53675e3c859fd6c8"
+            ]
+        ]
+    },
+    {
+        "id": "572306ac1adae9a7",
+        "type": "subflow:dcb45a938f792c3a",
+        "z": "2b46c00a75dc9c44",
+        "name": "",
+        "x": 1250,
+        "y": 620,
+        "wires": [
+            [
+                "aefbe5d51db7c62a"
+            ]
+        ]
+    },
+    {
+        "id": "46af8fc374e29422",
+        "type": "subflow:dcb45a938f792c3a",
+        "z": "2b46c00a75dc9c44",
+        "name": "",
+        "x": 1250,
+        "y": 960,
+        "wires": [
+            [
+                "2deeb1e6df59c62c"
+            ]
+        ]
+    },
+    {
+        "id": "eb7a8eeed59c4c64",
+        "type": "subflow:dcb45a938f792c3a",
+        "z": "2b46c00a75dc9c44",
+        "name": "",
+        "x": 1250,
+        "y": 1520,
+        "wires": [
+            [
+                "5bf3fccf873f8b9a"
+            ]
+        ]
+    },
+    {
+        "id": "adf43272a7c2357d",
+        "type": "subflow:dcb45a938f792c3a",
+        "z": "2b46c00a75dc9c44",
+        "name": "",
+        "x": 1250,
+        "y": 1620,
+        "wires": [
+            [
+                "bb668d340713890f"
+            ]
+        ]
+    },
+    {
+        "id": "3cd27f8bca904ac0",
+        "type": "debug",
+        "z": "2b46c00a75dc9c44",
+        "name": "9 DM mockmove PL Log",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1310,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "67684eabd437107c",
+        "type": "subflow:dcb45a938f792c3a",
+        "z": "2b46c00a75dc9c44",
+        "name": "",
+        "x": 1250,
+        "y": 1320,
+        "wires": [
+            [
+                "fae873681e624766"
+            ]
+        ]
     },
     {
         "id": "e01e2459471a3410",

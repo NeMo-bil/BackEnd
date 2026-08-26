@@ -3,7 +3,6 @@
 .env.*
 !.env.example
 
-compose/mosquitto/config/passwd
 compose/mosquitto/data/
 compose/mosquitto/log/
 
