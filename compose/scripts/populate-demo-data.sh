@@ -18,10 +18,15 @@ echo "2"
 
 ACCESS_TOKEN=$("$SCRIPT_DIR/get-token.sh")
 
+echo "3"
+
 echo
 echo "ACCESS_TOKEN (80 Characters only):"
 echo "${ACCESS_TOKEN:0:80}..."
 echo
+
+echo "4"
+
 
 export ACCESS_TOKEN
 
