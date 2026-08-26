@@ -7,10 +7,14 @@ echo "======================================"
 echo "Loading demo data..."
 echo "======================================"
 
+echo "1"
+
 #
 # Obtain OAuth access token
 #
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+echo "2"
 
 ACCESS_TOKEN=$("$SCRIPT_DIR/get-token.sh")
 

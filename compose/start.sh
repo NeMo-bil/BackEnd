@@ -35,21 +35,16 @@ echo "envVar MQTT_NODERED_USER extracted from .env: "
 grep '^MQTT_NODERED_USER=' .env || echo "grep failed"
 
 
-
-# echo
-# echo "Step 1/4 - Creating MQTT password..."
-# ./scripts/create-mqtt-password.sh
-
 echo
-echo "Step 2/4 - Starting Docker containers..."
+echo "Step 1/3 - Starting Docker containers..."
 docker compose up -d
 
 echo
-echo "Step 3/4 - Waiting for services..."
+echo "Step 2/3 - Waiting for services..."
 ./scripts/wait-for-services.sh
 
 echo
-echo "Step 4/4 - Populating demo data..."
+echo "Step 3/3 - Populating demo data..."
 ./scripts/populate-demo-data.sh
 
 
