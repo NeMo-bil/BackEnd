@@ -137,14 +137,10 @@ STATUS=$(curl \
   }
 }')
 
-case "$STATUS" in
-    201)
-        echo "✓ Entity created (HTTP $STATUS)"
-        ;;
-    409)
-        echo "✓ Entity already exists (HTTP $STATUS)"
-        ;;
-    *)
-        echo "✗ Entity to create subscription (HTTP $STATUS)"
-        ;;
-esac
+if [ "$HTTP_CODE" -eq 201 ]; then
+    echo "✓ Cab Entity created (HTTP $HTTP_CODE)"
+    exit 0
+else
+    echo "✗ Failed to create Cab Entity (HTTP $HTTP_CODE)"
+    exit 1
+fi

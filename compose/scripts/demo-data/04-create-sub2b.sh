@@ -44,14 +44,10 @@ STATUS=$(curl \
   }
 }')
 
-case "$STATUS" in
-    201)
-        echo "✓ Subscription created (HTTP $STATUS)"
-        ;;
-    409)
-        echo "✓ Subscription already exists (HTTP $STATUS)"
-        ;;
-    *)
-        echo "✗ Failed to create subscription (HTTP $STATUS)"
-        ;;
-esac
+if [ "$HTTP_CODE" -eq 201 ]; then
+    echo "✓ Subscription created (HTTP $HTTP_CODE)"
+    exit 0
+else
+    echo "✗ Failed to create subscription (HTTP $HTTP_CODE)"
+    exit 1
+fi
