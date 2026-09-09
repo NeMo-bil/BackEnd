@@ -7,26 +7,30 @@ echo "======================================"
 echo "Loading demo data..."
 echo "======================================"
 
-echo "1"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+#
+# Load environment variables
+#
+if [ ! -f "$PROJECT_DIR/.env" ]; then
+    echo "ERROR: .env not found: $PROJECT_DIR/.env"
+    exit 1
+fi
+
+set -a
+source "$PROJECT_DIR/.env"
+set +a
 
 #
 # Obtain OAuth access token
 #
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
-echo "2"
-
 ACCESS_TOKEN=$("$SCRIPT_DIR/get-token.sh")
-
-echo "3"
 
 echo
 echo "ACCESS_TOKEN (80 Characters only):"
 echo "${ACCESS_TOKEN:0:80}..."
 echo
-
-echo "4"
-
 
 export ACCESS_TOKEN
 
