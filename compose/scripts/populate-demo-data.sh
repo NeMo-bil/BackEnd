@@ -59,6 +59,13 @@ do
     echo
     echo "Running $(basename "$script")..."
     bash "$script"
+    
+    if [ "$HTTP_CODE" -eq 201 ]; then
+        echo "✓ Subscription created (HTTP $HTTP_CODE)" 
+    else
+        echo "✗ Failed to create subscription (HTTP $HTTP_CODE)"
+        exit 1
+    fi
 done
 
 echo
