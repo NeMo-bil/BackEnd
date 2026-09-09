@@ -18,9 +18,26 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
     exit 1
 fi
 
-set -a
-source "$PROJECT_DIR/.env"
-set +a
+NEMOBIL_NGSI_JSON_LD_CONTEXT="$(
+    grep '^NEMOBIL_NGSI_JSON_LD_CONTEXT=' "$PROJECT_DIR/.env" | cut -d= -f2-
+)"
+
+APPLICATION_TENANTS_0_NAME="$(
+    grep '^APPLICATION_TENANTS_0_NAME=' "$PROJECT_DIR/.env" | cut -d= -f2-
+)"
+
+export NEMOBIL_NGSI_JSON_LD_CONTEXT
+export APPLICATION_TENANTS_0_NAME
+
+if [ -z "$NEMOBIL_NGSI_JSON_LD_CONTEXT" ]; then
+    echo "ERROR: NEMOBIL_NGSI_JSON_LD_CONTEXT missing in .env"
+    exit 1
+fi
+
+if [ -z "$APPLICATION_TENANTS_0_NAME" ]; then
+    echo "ERROR: APPLICATION_TENANTS_0_NAME missing in .env"
+    exit 1
+fi
 
 #
 # Obtain OAuth access token
