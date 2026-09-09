@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 ERRORS=0
 
@@ -52,7 +52,12 @@ fi
 #
 # Environment file
 #
-if [ -f "$SCRIPT_DIR/.env" ]; then
+echo "SCRIPT_DIR:  >$SCRIPT_DIR<"
+echo "PROJECT_DIR: >$PROJECT_DIR<"
+echo "Looking for: >$PROJECT_DIR/.env<"
+echo
+
+if [ -f "$PROJECT_DIR/.env" ]; then
     check_ok ".env file found"
 else
     check_error ".env file missing"
