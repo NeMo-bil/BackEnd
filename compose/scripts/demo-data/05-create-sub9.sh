@@ -8,9 +8,9 @@ STATUS=$(curl \
     -w "%{http_code}" \
     -X POST "http://localhost:8080/ngsi-ld/v1/subscriptions" \
     -H "Link: <${NEMOBIL_NGSI_JSON_LD_CONTEXT}>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"" \
-    -H 'NGSILD-Tenant: ${APPLICATION_TENANTS_0_NAME}' \
+    -H "NGSILD-Tenant: ${APPLICATION_TENANTS_0_NAME}" \
     -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-    -H 'Content-Type: application/json' \
+    -H "Content-Type: application/json" \
     -d $'{
   "id": "urn:ngsi-ld:Subscription:9mockmove",
   "type": "Subscription",

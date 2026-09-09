@@ -52,6 +52,7 @@ fi
 #
 # Environment file
 #
+echo
 echo "SCRIPT_DIR:  >$SCRIPT_DIR<"
 echo "PROJECT_DIR: >$PROJECT_DIR<"
 echo "Looking for: >$PROJECT_DIR/.env<"
