@@ -1,25 +1,24 @@
-# Keep scripts Linux-compatible across Windows/macOS/Linux
-
-* text=auto
-
+# Shell scripts must always use Unix line endings
 *.sh text eol=lf
-*.env text eol=lf
-*.yaml text eol=lf
+
+# Environment templates
+.env.example text eol=lf
+
+# Docker / Compose files
+Dockerfile text eol=lf
 *.yml text eol=lf
-*.conf text eol=lf
+*.yaml text eol=lf
 
+# Application configuration
+*.json text eol=lf
 
-*.yaml text
-*.yml text
-*.json text
-*.md text
+# Documentation
+*.md text eol=lf
 
+# Explicitly treat binary files as binary
 *.png binary
 *.jpg binary
 *.jpeg binary
-
-*.sh text eol=lf
-.env.example text eol=lf
-*.json text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
+*.gif binary
+*.ico binary
+*.pdf binary
