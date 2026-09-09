@@ -2,6 +2,8 @@
 
 echo "Creating Subscription: 1CreateTPfromTR..."
 
+sleep 30
+
 STATUS=$(curl \
     -s \
     -o /dev/null \
