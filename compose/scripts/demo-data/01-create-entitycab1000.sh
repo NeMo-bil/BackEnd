@@ -137,10 +137,10 @@ STATUS=$(curl \
   }
 }')
 
-if [ "$HTTP_CODE" -eq 201 ]; then
-    echo "✓ Cab Entity created (HTTP $HTTP_CODE)"
+if [ "$STATUS" -eq 201 ]; then
+    echo "✓ Cab Entity created (HTTP $STATUS)"
     exit 0
 else
-    echo "✗ Failed to create Cab Entity (HTTP $HTTP_CODE)"
+    echo "✗ Failed to create Cab Entity (HTTP $STATUS)"
     exit 1
 fi
